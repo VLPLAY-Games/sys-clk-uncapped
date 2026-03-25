@@ -2,6 +2,12 @@
 
 Switch sysmodule allowing you to set cpu/gpu/mem clocks according to the running application and docked state.
 
+⚠️ Warning: This version includes an experimental option “Unlock GPU limits (Mariko only)” that removes the 768 MHz GPU cap while charging.  
+Use it only on Mariko consoles (V2, Lite, OLED) and only when you are aware of the risks (overheating, instability, possible hardware damage).  
+It is disabled by default and must be enabled manually in the manager’s Advanced Settings.
+
+---
+
 ## Installation
 
 The following instructions assumes you have a Nintendo Switch running Atmosphère, updated to at least the latest stable version.
@@ -108,18 +114,23 @@ The `[values]` section allows you to alter timings in sys-clk, you should not ne
 |**power_log_interval_ms**| Defines how often sys-clk logs power usage, in milliseconds (`0` to disable)  | 0 ms    |
 |**csv_write_interval_ms**| Defines how often sys-clk writes to the CSV, in milliseconds (`0` to disable) | 0 ms    |
 |**poll_interval_ms**     | Defines how fast sys-clk checks and applies profiles, in milliseconds         | 300 ms  |
+|**unlock_gpu_limits**    | Mariko only. Remove GPU cap (768 MHz) while charging (0/1, default 0)         | 0       |
 
 
 ## Capping
 
 To protect the battery from excessive strain, clocks requested from config may be capped before applying, depending on your current profile:
 
-|       | Handheld | Charging (USB) | Charging (Official) | Docked |
-|:-----:|:--------:|:--------------:|:-------------------:|:------:|
-|**MEM**| -        | -              | -                   | -      |
-|**CPU**| -        | -              | -                   | -      |
-|**GPU**| 460 MHz* | 768 MHz        | -                   | -      |
-*\* GPU handheld max for Mariko is increased to 614 MHz*
+| Profile / Condition      | CPU | GPU (Erista) | GPU (Mariko) | MEM |
+|--------------------------|-----|--------------|--------------|-----|
+| Handheld (no charger)    | –   | 460 MHz      | 614 MHz      | –   |
+| Charging (any charger)   | –   | 768 MHz      | 768 MHz¹     | –   |
+| Docked                   | –   | –            | –            | –   |
+¹ Mariko only: if unlock_gpu_limits = 1 (enabled), the 768 MHz cap is removed while charging. The GPU can then reach any frequency available from the system (up to 1305 MHz, depending on firmware and hardware).
+
+For Erista consoles the cap always stays at 768 MHz when charging.
+
+Note: Frequencies above 768 MHz while charging require the official Nintendo AC adapter on stock firmware. This modification allows them with any charger, but only on Mariko hardware and at the user's own risk.
 
 ## Clock table (MHz)
 
@@ -159,5 +170,10 @@ To protect the battery from excessive strain, clocks requested from config may b
 * 76 → boost mode
 
 **Notes:**
-1. GPU overclock is capped at 460MHz in handheld and capped at 768MHz if charging, unless you're using the official charger.
-2. Clocks higher than 768MHz need the official charger is plugged in.
+1. GPU overclock is capped at 460 MHz (Erista) / 614 MHz (Mariko) in handheld mode.
+
+2. On stock sys-clk, GPU overclock while charging is capped at 768 MHz unless you are using the official charger.
+
+3. With the “Unlock GPU limits” option enabled (Mariko only), the 768 MHz cap is removed while charging, allowing frequencies up to 921 MHz or higher (if available in your firmware).
+
+4. Use this feature at your own risk – monitor temperatures and stability.
