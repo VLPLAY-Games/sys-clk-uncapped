@@ -86,18 +86,30 @@ bool ClockManager::IsAssignableHz(SysClkModule module, std::uint32_t hz)
 
 std::uint32_t ClockManager::GetMaxAllowedHz(SysClkModule module, SysClkProfile profile)
 {
-    if(module == SysClkModule_GPU)
+    if (module == SysClkModule_GPU)
     {
-        if(profile < SysClkProfile_HandheldCharging)
+        bool unlock = this->config->GetConfigValue(SysClkConfigValue_UnlockGpuLimits) != 0;
+
+        // Разрешение разгона только если:
+        // - опция включена
+        // - консоль Mariko
+        // - подключена зарядка (любой тип)
+        if (unlock && Board::GetSocType() == SysClkSocType_Mariko &&
+            profile >= SysClkProfile_HandheldCharging)
+        {
+            return 0;   // 0 = нет ограничений
+        }
+
+        // Оригинальные ограничения
+        if (profile < SysClkProfile_HandheldCharging)           // без зарядки
         {
             return Board::GetSocType() == SysClkSocType_Mariko ? 614400000 : 460800000;
         }
-        else if(profile <= SysClkProfile_HandheldChargingUSB)
+        else if (profile <= SysClkProfile_HandheldChargingUSB)  // зарядка
         {
             return 768000000;
         }
     }
-
     return 0;
 }
 

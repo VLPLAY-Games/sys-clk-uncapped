@@ -20,6 +20,7 @@ typedef enum {
     SysClkConfigValue_PowerLogIntervalMs,
     SysClkConfigValue_CsvWriteIntervalMs,
     SysClkConfigValue_EnumMax,
+    SysClkConfigValue_UnlockGpuLimits,
 } SysClkConfigValue;
 
 typedef struct {
@@ -40,6 +41,8 @@ static inline const char* sysclkFormatConfigValue(SysClkConfigValue val, bool pr
             return pretty ? "Power logging interval (ms)" : "power_log_interval_ms";
         case SysClkConfigValue_CsvWriteIntervalMs:
             return pretty ? "CSV write interval (ms)" : "csv_write_interval_ms";
+        case SysClkConfigValue_UnlockGpuLimits:
+            return pretty ? "Unlock GPU limits (Mariko only)" : "unlock_gpu_limits";
         default:
             return NULL;
     }
@@ -55,6 +58,8 @@ static inline uint64_t sysclkDefaultConfigValue(SysClkConfigValue val)
         case SysClkConfigValue_FreqLogIntervalMs:
         case SysClkConfigValue_PowerLogIntervalMs:
         case SysClkConfigValue_CsvWriteIntervalMs:
+            return 0ULL;
+        case SysClkConfigValue_UnlockGpuLimits:
             return 0ULL;
         default:
             return 0ULL;
@@ -72,6 +77,8 @@ static inline uint64_t sysclkValidConfigValue(SysClkConfigValue val, uint64_t in
         case SysClkConfigValue_PowerLogIntervalMs:
         case SysClkConfigValue_CsvWriteIntervalMs:
             return input >= 0;
+        case SysClkConfigValue_UnlockGpuLimits:
+            return input <= 1;
         default:
             return false;
     }
