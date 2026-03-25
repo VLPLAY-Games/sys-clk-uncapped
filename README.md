@@ -2,9 +2,16 @@
 
 Switch sysmodule allowing you to set cpu/gpu/mem clocks according to the running application and docked state.
 
-⚠️ Warning: This version includes an experimental option “Unlock GPU limits (Mariko only)” that removes the 768 MHz GPU cap while charging.  
-Use it only on Mariko consoles (V2, Lite, OLED) and only when you are aware of the risks (overheating, instability, possible hardware damage).  
-It is disabled by default and must be enabled manually in the manager’s Advanced Settings.
+> **⚠️ DISCLAIMER**  
+> This is a **modified version** of sys-clk.  
+> The **"Unlock GPU limits (Mariko only)"** option removes the 768 MHz GPU cap while charging **only on Mariko consoles** (V2, Lite, OLED).  
+> **Use at your own risk.** Overclocking may cause overheating, instability, or hardware damage.  
+> The original authors and the modifier are **not responsible** for any damage or data loss.  
+> By enabling this option, you acknowledge that you understand the risks.
+
+> **⚠️ Warning:** This version includes an experimental option “Unlock GPU limits (Mariko only)” that removes the 768 MHz GPU cap while charging.  
+>Use it only on Mariko consoles (V2, Lite, OLED) and only when you are aware of the risks (overheating, instability, possible hardware damage).  
+>It is disabled by default and must be enabled manually in the manager’s Advanced Settings.
 
 ---
 
