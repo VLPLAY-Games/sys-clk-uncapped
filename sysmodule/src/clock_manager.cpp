@@ -88,28 +88,31 @@ std::uint32_t ClockManager::GetMaxAllowedHz(SysClkModule module, SysClkProfile p
 {
     if (module == SysClkModule_GPU)
     {
-        // 1. Читаем значение нашей новой настройки из конфига
-        bool unlock = this->config->GetConfigValue(SysClkConfigValue_UnlockGpuLimits) != 0;
+        bool onlyCharging = this->config->GetConfigValue(SysClkConfigValue_OnlyOnCharging) != 0;
+        bool isCharging = (profile >= SysClkProfile_HandheldCharging);
+        SysClkSocType soc = Board::GetSocType();
 
-        // 2. Если анлок включен, это Mariko и идет зарядка — даем 1.2 ГГц
-        if (unlock && Board::GetSocType() == SysClkSocType_Mariko && 
-            profile >= SysClkProfile_HandheldCharging)
-        {
-            return 1267200000; // Безопасный максимум для Mariko (OC)
+        // 1. Если включено "Only on charging", но зарядки нет — даем только сток
+        if (onlyCharging && !isCharging) {
+            return (soc == SysClkSocType_Mariko) ? 614400000 : 460800000;
         }
 
-        // 3. Оригинальные ограничения (если анлок выключен или это Erista/не зарядка)
-        if (profile < SysClkProfile_HandheldCharging)           // без зарядки
-        {
-            return Board::GetSocType() == SysClkSocType_Mariko ? 614400000 : 460800000;
+        // 2. Логика для Mariko (V2, Lite, OLED)
+        if (soc == SysClkSocType_Mariko && this->config->GetConfigValue(SysClkConfigValue_UnlockGpuMariko)) {
+            return 1267200000; 
         }
-        else if (profile <= SysClkProfile_HandheldChargingUSB)  // обычная зарядка
-        {
-            return 768000000;
+
+        // 3. Логика для Erista (V1)
+        if (soc == SysClkSocType_Erista && this->config->GetConfigValue(SysClkConfigValue_UnlockGpuErista)) {
+            return 921600000; // Безопасный предел для V1
         }
+
+        // 4. Сток лимиты по умолчанию
+        return isCharging ? 768000000 : (soc == SysClkSocType_Mariko ? 614400000 : 460800000);
     }
     return 0;
 }
+
 
 std::uint32_t ClockManager::GetNearestHz(SysClkModule module, std::uint32_t inHz, std::uint32_t maxHz)
 {

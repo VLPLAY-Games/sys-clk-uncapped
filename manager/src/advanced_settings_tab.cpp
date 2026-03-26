@@ -111,7 +111,9 @@ AdvancedSettingsTab::AdvancedSettingsTab()
     {
         SysClkConfigValue config = (SysClkConfigValue) i;
 
-        if (config == SysClkConfigValue_UnlockGpuLimits)
+        if (config == SysClkConfigValue_UnlockGpuMariko || 
+            config == SysClkConfigValue_UnlockGpuErista || 
+            config == SysClkConfigValue_OnlyOnCharging)
             continue;
 
         std::string label       = std::string(sysclkFormatConfigValue(config, true));
@@ -159,61 +161,66 @@ AdvancedSettingsTab::AdvancedSettingsTab()
 
         this->addView(configItem);
     }
-    // --- Исправленный блок ---
-    SysClkConfigValueList currentConfig;
-    sysclkIpcGetConfigValues(&currentConfig);
-    bool unlockEnabled = currentConfig.values[SysClkConfigValue_UnlockGpuLimits] != 0;
+    this->addView(new brls::Header("Uncapped Mod Settings"));
 
-    brls::ToggleListItem* unlockGpuItem = new brls::ToggleListItem(
-        "Unlock GPU limits (Mariko only)",
-        unlockEnabled
-    );
+    // 1. Только на зарядке (Only on Charging)
+    bool onlyCharge = this->configValues.values[SysClkConfigValue_OnlyOnCharging] != 0;
+    brls::ToggleListItem* chargeItem = new brls::ToggleListItem("Limit to Charging (Recommended)", onlyCharge);
+    chargeItem->getClickEvent()->subscribe([this, chargeItem](brls::View* v) {
+        this->configValues.values[SysClkConfigValue_OnlyOnCharging] = chargeItem->getToggleState() ? 1 : 0;
+        sysclkIpcSetConfigValues(&this->configValues);
+    });
+    this->addView(chargeItem);
 
-    // Используем onToggle (или getToggleEvent), чтобы точно знать новое состояние
-    unlockGpuItem->getClickEvent()->subscribe([this, unlockGpuItem](brls::View* view) {
-        // В Borealis при клике на ToggleListItem состояние уже инвертировалось
-        bool newState = unlockGpuItem->getToggleState();
-
+    // 2. Разблокировка для Mariko (V2/OLED)
+    bool mEnabled = this->configValues.values[SysClkConfigValue_UnlockGpuMariko] != 0;
+    brls::ToggleListItem* marikoItem = new brls::ToggleListItem("Unlock GPU (Mariko/OLED)", mEnabled);
+    marikoItem->getClickEvent()->subscribe([this, marikoItem](brls::View* v) {
+        bool newState = marikoItem->getToggleState();
         if (newState) {
-            brls::Dialog* warningDialog = new brls::Dialog(
-                "WARNING: Removing GPU limits can cause overheating.\n"
-                "This option is only safe for Mariko (V2, Lite, OLED).\n"
-                "Proceed?"
-            );
-
-            warningDialog->addButton("Cancel", [unlockGpuItem, warningDialog](brls::View* v) {
-                unlockGpuItem->setChecked(false); // Откатываем назад, если нажали Cancel
-                
-                SysClkConfigValueList cfg;
-                sysclkIpcGetConfigValues(&cfg);
-                cfg.values[SysClkConfigValue_UnlockGpuLimits] = 0;
-                sysclkIpcSetConfigValues(&cfg);
-                
-                warningDialog->close();
+            brls::Dialog* diag = new brls::Dialog("WARNING: Higher GPU clocks can cause overheating on Mariko. Proceed?");
+            diag->addButton("Cancel", [marikoItem, diag](brls::View* v) { 
+                marikoItem->setChecked(false); 
+                diag->close(); 
             });
-
-            warningDialog->addButton("Proceed", [this, warningDialog](brls::View* v) {
-                SysClkConfigValueList cfg;
-                sysclkIpcGetConfigValues(&cfg);
-                cfg.values[SysClkConfigValue_UnlockGpuLimits] = 1;
-                sysclkIpcSetConfigValues(&cfg);
-                
-                brls::Application::notify("GPU limits disabled.");
-                warningDialog->close();
+            diag->addButton("Proceed", [this, marikoItem, diag](brls::View* v) {
+                this->configValues.values[SysClkConfigValue_UnlockGpuMariko] = 1;
+                sysclkIpcSetConfigValues(&this->configValues);
+                brls::Application::notify("Mariko limits removed!");
+                diag->close();
             });
-
-            warningDialog->open();
+            diag->open();
         } else {
-            // Если пользователь просто выключил тумблер
-            SysClkConfigValueList cfg;
-            sysclkIpcGetConfigValues(&cfg);
-            cfg.values[SysClkConfigValue_UnlockGpuLimits] = 0;
-            sysclkIpcSetConfigValues(&cfg);
-            brls::Application::notify("GPU limits restored.");
+            this->configValues.values[SysClkConfigValue_UnlockGpuMariko] = 0;
+            sysclkIpcSetConfigValues(&this->configValues);
         }
     });
+    this->addView(marikoItem);
 
-    this->addView(unlockGpuItem);
+    // 3. Разблокировка для Erista (V1)
+    bool eEnabled = this->configValues.values[SysClkConfigValue_UnlockGpuErista] != 0;
+    brls::ToggleListItem* eristaItem = new brls::ToggleListItem("Unlock GPU (Erista/V1)", eEnabled);
+    eristaItem->getClickEvent()->subscribe([this, eristaItem](brls::View* v) {
+        bool newState = eristaItem->getToggleState();
+        if (newState) {
+            brls::Dialog* diag = new brls::Dialog("WARNING: Erista (V1) has lower thermal limits. Unlock higher clocks?");
+            diag->addButton("Cancel", [eristaItem, diag](brls::View* v) { 
+                eristaItem->setChecked(false); 
+                diag->close(); 
+            });
+            diag->addButton("Proceed", [this, eristaItem, diag](brls::View* v) {
+                this->configValues.values[SysClkConfigValue_UnlockGpuErista] = 1;
+                sysclkIpcSetConfigValues(&this->configValues);
+                brls::Application::notify("Erista limits removed!");
+                diag->close();
+            });
+            diag->open();
+        } else {
+            this->configValues.values[SysClkConfigValue_UnlockGpuErista] = 0;
+            sysclkIpcSetConfigValues(&this->configValues);
+        }
+    });
+    this->addView(eristaItem);
 }
 
 std::string AdvancedSettingsTab::getDescriptionForConfig(SysClkConfigValue config)

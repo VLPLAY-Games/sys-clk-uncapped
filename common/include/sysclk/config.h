@@ -19,7 +19,9 @@ typedef enum {
     SysClkConfigValue_FreqLogIntervalMs,
     SysClkConfigValue_PowerLogIntervalMs,
     SysClkConfigValue_CsvWriteIntervalMs,
-    SysClkConfigValue_UnlockGpuLimits,
+    SysClkConfigValue_UnlockGpuMariko = 5,
+    SysClkConfigValue_UnlockGpuErista,
+    SysClkConfigValue_OnlyOnCharging,
     SysClkConfigValue_EnumMax,
 } SysClkConfigValue;
 
@@ -41,8 +43,12 @@ static inline const char* sysclkFormatConfigValue(SysClkConfigValue val, bool pr
             return pretty ? "Power logging interval (ms)" : "power_log_interval_ms";
         case SysClkConfigValue_CsvWriteIntervalMs:
             return pretty ? "CSV write interval (ms)" : "csv_write_interval_ms";
-        case SysClkConfigValue_UnlockGpuLimits: 
-            return pretty ? "Unlock GPU limits (Mariko)" : "unlock_gpu_limits";
+        case SysClkConfigValue_UnlockGpuMariko:
+            return pretty ? "Unlock GPU (Mariko/OLED/Lite)" : "unlock_gpu_mariko";
+        case SysClkConfigValue_UnlockGpuErista:
+            return pretty ? "Unlock GPU (Erista/V1)" : "unlock_gpu_erista";
+        case SysClkConfigValue_OnlyOnCharging:
+            return pretty ? "Only while charging" : "only_on_charging";
         default:
             return NULL;
     }
@@ -59,7 +65,9 @@ static inline uint64_t sysclkDefaultConfigValue(SysClkConfigValue val)
         case SysClkConfigValue_PowerLogIntervalMs:
         case SysClkConfigValue_CsvWriteIntervalMs:
             return 0ULL;
-        case SysClkConfigValue_UnlockGpuLimits: 
+        case SysClkConfigValue_UnlockGpuMariko:
+        case SysClkConfigValue_UnlockGpuErista:
+        case SysClkConfigValue_OnlyOnCharging:
             return 0ULL;
         default:
             return 0ULL;
@@ -77,7 +85,9 @@ static inline uint64_t sysclkValidConfigValue(SysClkConfigValue val, uint64_t in
         case SysClkConfigValue_PowerLogIntervalMs:
         case SysClkConfigValue_CsvWriteIntervalMs:
             return input >= 0;
-        case SysClkConfigValue_UnlockGpuLimits: 
+        case SysClkConfigValue_UnlockGpuMariko:
+        case SysClkConfigValue_UnlockGpuErista:
+        case SysClkConfigValue_OnlyOnCharging:
             return input <= 1;
         default:
             return false;
