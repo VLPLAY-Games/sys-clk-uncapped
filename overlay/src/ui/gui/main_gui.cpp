@@ -12,7 +12,6 @@
 
 #include "fatal_gui.h"
 #include "app_profile_gui.h"
-#include "global_override_gui.h"
 
 void MainGui::listUI()
 {
@@ -40,20 +39,6 @@ void MainGui::listUI()
         return false;
     });
     this->listElement->addItem(appProfileItem);
-
-    this->listElement->addItem(new tsl::elm::CategoryHeader("Advanced"));
-
-    tsl::elm::ListItem* globalOverrideItem = new tsl::elm::ListItem("Temporary overrides");
-    globalOverrideItem->setClickListener([this](u64 keys) {
-        if((keys & HidNpadButton_A) == HidNpadButton_A)
-        {
-            tsl::changeTo<GlobalOverrideGui>();
-            return true;
-        }
-
-        return false;
-    });
-    this->listElement->addItem(globalOverrideItem);
 }
 
 void MainGui::refresh()
