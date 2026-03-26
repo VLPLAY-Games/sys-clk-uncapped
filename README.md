@@ -2,6 +2,8 @@
 
 Modified version of **sys-clk** with advanced GPU frequency unlocking for Mariko and Erista consoles.
 
+![2026032614281000](https://github.com/user-attachments/assets/d0d59ad2-686e-43f1-ba03-171f4391510f)
+
 ---
 
 ## ⚠️ DISCLAIMER & WARNING
