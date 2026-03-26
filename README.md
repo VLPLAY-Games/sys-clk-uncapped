@@ -1,61 +1,48 @@
-# sys-clk
+# sys-clk-uncapped (VL_PLAY Mod)
 
-Switch sysmodule allowing you to set cpu/gpu/mem clocks according to the running application and docked state.
+Modified version of **sys-clk** with advanced GPU frequency unlocking for Mariko and Erista consoles.
 
-> **⚠️ DISCLAIMER**  
-> This is a **modified version** of sys-clk.  
-> The **"Unlock GPU limits (Mariko only)"** option removes the 768 MHz GPU cap while charging **only on Mariko consoles** (V2, Lite, OLED).  
-> **Use at your own risk.** Overclocking may cause overheating, instability, or hardware damage.  
-> The original authors and the modifier are **not responsible** for any damage or data loss.  
-> By enabling this option, you acknowledge that you understand the risks.
+---
 
-> **⚠️ Warning:** This version includes an experimental option “Unlock GPU limits (Mariko only)” that removes the 768 MHz GPU cap while charging.  
->Use it only on Mariko consoles (V2, Lite, OLED) and only when you are aware of the risks (overheating, instability, possible hardware damage).  
->It is disabled by default and must be enabled manually in the manager’s Advanced Settings.
+## ⚠️ DISCLAIMER & WARNING
+
+This is a third-party modification that removes safety limits established by original developers.  
+Overclocking may cause overheating, instability, or permanent hardware damage.  
+Use at your own risk. Authors are NOT responsible for any damage or data loss.
+
+---
+
+## New Features
+
+- **Unlock GPU limits (Mariko):** Removes 768 MHz cap while charging (V2/Lite/OLED)
+- **Unlock GPU limits (Erista):** Removes 768 MHz cap (up to 921 MHz)
+- **Only on Charging:** Limits unsafe clocks to charging state (default ON)
 
 ---
 
 ## Installation
 
-The following instructions assumes you have a Nintendo Switch running Atmosphère, updated to at least the latest stable version.
-Copy the `atmosphere`, and `switch` folders at the root of your sdcard, overwriting files if prompted. Also copy the `config` folder if you're not updating, to include default settings.
+Copy to SD root:
+- `atmosphere`
+- `switch`
+- `config` (if fresh install)
 
-**Note:** sys-clk-overlay requires to have [Tesla](https://gbatemp.net/threads/tesla-the-nintendo-switch-overlay-menu.557362/) installed and running
+Requires Atmosphère + Tesla overlay.
 
-## Relevant files
+---
 
-* Config file allows one to set custom clocks per docked state and title id, described below
+## Relevant Files
 
-	`/config/sys-clk/config.ini`
+- `/config/sys-clk/config.ini` — config
+- `/config/sys-clk/log.txt` — logs
+- `/config/sys-clk/context.csv` — telemetry
+- `/switch/sys-clk-manager.nro` — manager
+- `/switch/.overlays/sys-clk-overlay.ovl` — overlay
+- `/atmosphere/.../exefs.nsp` — sysmodule
 
-* Log file where the logs are written if enabled
-
-	`/config/sys-clk/log.txt`
-
-* Log flag file enables log writing if file exists
-
-	`/config/sys-clk/log.flag`
-
-* CSV file where the title id, profile, clocks and temperatures are written if enabled
-
-	`/config/sys-clk/context.csv`
-
-* sys-clk manager app (accessible from the hbmenu)
-
-	`/switch/sys-clk-manager.nro`
-
-* sys-clk overlay (accessible from anywhere by invoking the [Tesla menu](https://gbatemp.net/threads/tesla-the-nintendo-switch-overlay-menu.557362/))
-
-	`/switch/.overlays/sys-clk-overlay.ovl`
-	
-* sys-clk core sysmodule
-
-	`/atmosphere/contents/00FF0000636C6BFF/exefs.nsp`
-	`/atmosphere/contents/00FF0000636C6BFF/flags/boot2.flag`
+---
 
 ## Config
-
-Presets can be customized by adding them to the ini config file located at `/config/sys-clk/config.ini`, using the following template for each app 
 
 ```
 [Application Title ID]
@@ -65,32 +52,16 @@ docked_mem=
 handheld_charging_cpu=
 handheld_charging_gpu=
 handheld_charging_mem=
-handheld_charging_usb_cpu=
-handheld_charging_usb_gpu=
-handheld_charging_usb_mem=
-handheld_charging_official_cpu=
-handheld_charging_official_gpu=
-handheld_charging_official_mem=
 handheld_cpu=
 handheld_gpu=
 handheld_mem=
 ```
 
-* Replace `Application Title ID` with the title id of the game/application you're interested in customizing.
-A list of games title id can be found in the [Switchbrew wiki](https://switchbrew.org/wiki/Title_list/Games).
-* Frequencies are expressed in mhz, and will be scaled to the nearest possible values, described in the clock table below.
-* If any key is omitted, value is empty or set to 0, it will be ignored, and stock clocks will apply.
-* If charging, sys-clk will look for the frequencies in that order, picking the first found 
-	1. Charger specific config (USB or Official) `handheld_charging_usb_X` or `handheld_charging_official_X`
-	2. Non specific charging config `handheld_charging_X`
-	3. Handheld config `handheld_X`
+If value = 0 → ignored (stock used)
 
-### Example 1: Zelda BOTW
+---
 
-* Overclock CPU when docked or charging
-* Overclock MEM to docked clocks when handheld
-
-Leads to a smoother framerate overall (ex: in the korok forest)
+## Example
 
 ```
 [01007EF00011E000]
@@ -99,88 +70,73 @@ handheld_charging_cpu=1224
 handheld_mem=1600
 ```
 
-### Example 2: Picross
+---
 
-* Underclocks on handheld to save battery
+## Advanced ([values])
+
+| Key | Description | Default |
+|-----|------------|--------|
+| poll_interval_ms | Profile check speed | 300 |
+| unlock_gpu_mariko | Remove cap (Mariko) | 0 |
+| unlock_gpu_erista | Remove cap (Erista) | 0 |
+| only_on_charging | Safety limiter | 1 |
+| temp_log_interval_ms | Temp logging | 0 |
+
+---
+
+
+
+### Uncapped Config Example
 
 ```
-[0100BA0003EEA000]
-handheld_cpu=816
-handheld_gpu=153
-handheld_mem=800
+[values]
+# 0 = Stock limits, 1 = Uncapped (Up to 1267 MHz on Mariko)
+unlock_gpu_mariko=1
+
+# 0 = Stock limits, 1 = Uncapped (Up to 921 MHz on Erista)
+unlock_gpu_erista=1
+
+# 1 = Uncapped frequencies only work while charging (Recommended)
+# 0 = Uncapped frequencies work always (Battery drain/Heat risk!)
+only_on_charging=1
 ```
 
-### Advanced
+## Frequency Capping
 
-The `[values]` section allows you to alter timings in sys-clk, you should not need to edit any of these unless you know what you are doing. Possible values are:
+| Mode | GPU (Erista) | GPU (Mariko) |
+|------|-------------|-------------|
+| Handheld | 460 MHz | 614 MHz |
+| Charging (Stock) | 768 MHz | 768 MHz |
+| Charging (Unlocked) | 921 MHz | 1267 MHz |
 
-| Key                     | Desc                                                                          | Default |
-|:-----------------------:|-------------------------------------------------------------------------------|:-------:|
-|**temp_log_interval_ms** | Defines how often sys-clk logs temperatures, in milliseconds (`0` to disable) | 0 ms    |
-|**freq_log_interval_ms** | Defines how often sys-clk logs real freqs, in milliseconds (`0` to disable)   | 0 ms    |
-|**power_log_interval_ms**| Defines how often sys-clk logs power usage, in milliseconds (`0` to disable)  | 0 ms    |
-|**csv_write_interval_ms**| Defines how often sys-clk writes to the CSV, in milliseconds (`0` to disable) | 0 ms    |
-|**poll_interval_ms**     | Defines how fast sys-clk checks and applies profiles, in milliseconds         | 300 ms  |
-|**unlock_gpu_limits**    | Mariko only. Remove GPU cap (768 MHz) while charging (0/1, default 0)         | 0       |
+*Requires unlock enabled*
 
+---
 
-## Capping
+## Clock Table
 
-To protect the battery from excessive strain, clocks requested from config may be capped before applying, depending on your current profile:
+### CPU
+612, 714, 816, 918, 1020, 1122, 1224, 1326, 1428, 1581, 1683, 1785
 
-| Profile / Condition      | CPU | GPU (Erista) | GPU (Mariko) | MEM |
-|--------------------------|-----|--------------|--------------|-----|
-| Handheld (no charger)    | –   | 460 MHz      | 614 MHz      | –   |
-| Charging (any charger)   | –   | 768 MHz      | 768 MHz¹     | –   |
-| Docked                   | –   | –            | –            | –   |
-¹ Mariko only: if unlock_gpu_limits = 1 (enabled), the 768 MHz cap is removed while charging. The GPU can then reach any frequency available from the system (up to 1305 MHz, depending on firmware and hardware).
+### GPU
+76, 153, 230, 307, 384, 460, 537, 614, 691, 768, 844, 921
 
-For Erista consoles the cap always stays at 768 MHz when charging.
+### MEM
+665, 800, 1065, 1331, 1600
 
-Note: Frequencies above 768 MHz while charging require the official Nintendo AC adapter on stock firmware. This modification allows them with any charger, but only on Mariko hardware and at the user's own risk.
+---
 
-## Clock table (MHz)
+## Important Notes
 
-### MEM clocks
-* 1600 → official docked, boost mode, max clock
-* 1331 → official handheld
-* 1065
-* 800
-* 665
+- Use **official charger** for high clocks
+- Keep temps **below 80°C**
+- Erista max safe ≈ **921 MHz**
+- High clocks = high power draw
 
-### CPU clocks
-* 1785 → max clock, boost mode
-* 1683
-* 1581
-* 1428
-* 1326
-* 1224 → sdev oc
-* 1122
-* 1020 → official docked & handheld
-* 918
-* 816
-* 714
-* 612
+---
 
-### GPU clocks
-* 921 → max clock
-* 844
-* 768 → official docked
-* 691
-* 614
-* 537
-* 460 → max handheld
-* 384 → official handheld
-* 307 → official handheld
-* 230
-* 153
-* 76 → boost mode
+## Summary
 
-**Notes:**
-1. GPU overclock is capped at 460 MHz (Erista) / 614 MHz (Mariko) in handheld mode.
-
-2. On stock sys-clk, GPU overclock while charging is capped at 768 MHz unless you are using the official charger.
-
-3. With the “Unlock GPU limits” option enabled (Mariko only), the 768 MHz cap is removed while charging, allowing frequencies up to 921 MHz or higher (if available in your firmware).
-
-4. Use this feature at your own risk – monitor temperatures and stability.
+This mod extends sys-clk with:
+- Full GPU unlock (Mariko & Erista)
+- Optional safety controls

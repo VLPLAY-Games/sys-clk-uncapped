@@ -92,7 +92,7 @@ std::uint32_t ClockManager::GetMaxAllowedHz(SysClkModule module, SysClkProfile p
         bool isCharging = (profile >= SysClkProfile_HandheldCharging);
         SysClkSocType soc = Board::GetSocType();
 
-        // 1. Если включено "Only on charging", но зарядки нет — даем только сток
+        // 1. Если включено "Only on charging", но зарядки нет — только сток
         if (onlyCharging && !isCharging) {
             return (soc == SysClkSocType_Mariko) ? 614400000 : 460800000;
         }
@@ -104,7 +104,7 @@ std::uint32_t ClockManager::GetMaxAllowedHz(SysClkModule module, SysClkProfile p
 
         // 3. Логика для Erista (V1)
         if (soc == SysClkSocType_Erista && this->config->GetConfigValue(SysClkConfigValue_UnlockGpuErista)) {
-            return 921600000; // Безопасный предел для V1
+            return 921600000;
         }
 
         // 4. Сток лимиты по умолчанию

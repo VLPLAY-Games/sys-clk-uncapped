@@ -44,7 +44,7 @@ RESOURCES	:=	resources
 DATA		:=	data
 INCLUDES	:=	../common/include
 APP_TITLE	:=	sys-clk manager
-APP_AUTHOR	:=	RetroNX Team
+APP_AUTHOR	:=	RetroNX Team, VLPLAY Games
 
 ROMFS				:=	$(BUILD)/romfs
 BOREALIS_PATH		:=	lib/borealis
@@ -55,7 +55,7 @@ APP_RESOURCES		:=	romfs:/
 # version control constants
 #---------------------------------------------------------------------------------
 TARGET_VERSION	:= $(shell git describe --dirty --always --tags)
-APP_VERSION		:= $(TARGET_VERSION)
+APP_VERSION		:= 2.0.1-mod
 
 #---------------------------------------------------------------------------------
 # options for code generation
