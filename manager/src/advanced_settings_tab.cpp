@@ -111,6 +111,9 @@ AdvancedSettingsTab::AdvancedSettingsTab()
     {
         SysClkConfigValue config = (SysClkConfigValue) i;
 
+        if (config == SysClkConfigValue_UnlockGpuLimits)
+            continue;
+
         std::string label       = std::string(sysclkFormatConfigValue(config, true));
         std::string description = this->getDescriptionForConfig(config);
         uint64_t defaultValue   = this->configValues.values[config];
@@ -156,64 +159,61 @@ AdvancedSettingsTab::AdvancedSettingsTab()
 
         this->addView(configItem);
     }
-
-    // --- Добавление переключателя для снятия GPU ограничений ---
+    // --- Исправленный блок ---
     SysClkConfigValueList currentConfig;
     sysclkIpcGetConfigValues(&currentConfig);
     bool unlockEnabled = currentConfig.values[SysClkConfigValue_UnlockGpuLimits] != 0;
 
     brls::ToggleListItem* unlockGpuItem = new brls::ToggleListItem(
         "Unlock GPU limits (Mariko only)",
-        unlockEnabled,
-        "",
-        "Yes",
-        "No"
+        unlockEnabled
     );
 
+    // Используем onToggle (или getToggleEvent), чтобы точно знать новое состояние
     unlockGpuItem->getClickEvent()->subscribe([this, unlockGpuItem](brls::View* view) {
+        // В Borealis при клике на ToggleListItem состояние уже инвертировалось
         bool newState = unlockGpuItem->getToggleState();
 
         if (newState) {
             brls::Dialog* warningDialog = new brls::Dialog(
-                "WARNING: Removing GPU limits can cause overheating, instability, and hardware damage.\n"
-                "This option is only safe for Mariko (V2, Lite, OLED) consoles.\n"
-                "It will only apply while the console is charging.\n"
-                "Do you want to proceed?"
+                "WARNING: Removing GPU limits can cause overheating.\n"
+                "This option is only safe for Mariko (V2, Lite, OLED).\n"
+                "Proceed?"
             );
-            warningDialog->addButton("Cancel", [unlockGpuItem](brls::View* view) {
-                unlockGpuItem->setToggleState(false);
-                view->close();
+
+            warningDialog->addButton("Cancel", [unlockGpuItem, warningDialog](brls::View* v) {
+                unlockGpuItem->setChecked(false); // Откатываем назад, если нажали Cancel
+                
+                SysClkConfigValueList cfg;
+                sysclkIpcGetConfigValues(&cfg);
+                cfg.values[SysClkConfigValue_UnlockGpuLimits] = 0;
+                sysclkIpcSetConfigValues(&cfg);
+                
+                warningDialog->close();
             });
-            warningDialog->addButton("Proceed", [this, unlockGpuItem](brls::View* view) {
-                SysClkConfigValueList newConfig;
-                sysclkIpcGetConfigValues(&newConfig);
-                newConfig.values[SysClkConfigValue_UnlockGpuLimits] = 1;
-                Result rc = sysclkIpcSetConfigValues(&newConfig);
-                if (R_FAILED(rc)) {
-                    brls::Application::notify("Failed to save configuration");
-                    unlockGpuItem->setToggleState(false);
-                } else {
-                    brls::Application::notify("GPU limits disabled. Changes take effect immediately.");
-                }
-                view->close();
+
+            warningDialog->addButton("Proceed", [this, warningDialog](brls::View* v) {
+                SysClkConfigValueList cfg;
+                sysclkIpcGetConfigValues(&cfg);
+                cfg.values[SysClkConfigValue_UnlockGpuLimits] = 1;
+                sysclkIpcSetConfigValues(&cfg);
+                
+                brls::Application::notify("GPU limits disabled.");
+                warningDialog->close();
             });
+
             warningDialog->open();
         } else {
-            SysClkConfigValueList newConfig;
-            sysclkIpcGetConfigValues(&newConfig);
-            newConfig.values[SysClkConfigValue_UnlockGpuLimits] = 0;
-            Result rc = sysclkIpcSetConfigValues(&newConfig);
-            if (R_FAILED(rc)) {
-                brls::Application::notify("Failed to save configuration");
-                unlockGpuItem->setToggleState(true);
-            } else {
-                brls::Application::notify("GPU limits restored.");
-            }
+            // Если пользователь просто выключил тумблер
+            SysClkConfigValueList cfg;
+            sysclkIpcGetConfigValues(&cfg);
+            cfg.values[SysClkConfigValue_UnlockGpuLimits] = 0;
+            sysclkIpcSetConfigValues(&cfg);
+            brls::Application::notify("GPU limits restored.");
         }
     });
 
     this->addView(unlockGpuItem);
-    // --- Конец добавления ---
 }
 
 std::string AdvancedSettingsTab::getDescriptionForConfig(SysClkConfigValue config)

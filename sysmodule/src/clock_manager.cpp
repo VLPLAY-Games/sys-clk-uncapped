@@ -88,24 +88,22 @@ std::uint32_t ClockManager::GetMaxAllowedHz(SysClkModule module, SysClkProfile p
 {
     if (module == SysClkModule_GPU)
     {
+        // 1. Читаем значение нашей новой настройки из конфига
         bool unlock = this->config->GetConfigValue(SysClkConfigValue_UnlockGpuLimits) != 0;
 
-        // Разрешение разгона только если:
-        // - опция включена
-        // - консоль Mariko
-        // - подключена зарядка (любой тип)
-        if (unlock && Board::GetSocType() == SysClkSocType_Mariko &&
+        // 2. Если анлок включен, это Mariko и идет зарядка — даем 1.2 ГГц
+        if (unlock && Board::GetSocType() == SysClkSocType_Mariko && 
             profile >= SysClkProfile_HandheldCharging)
         {
-            return 0;   // 0 = нет ограничений
+            return 1267200000; // Безопасный максимум для Mariko (OC)
         }
 
-        // Оригинальные ограничения
+        // 3. Оригинальные ограничения (если анлок выключен или это Erista/не зарядка)
         if (profile < SysClkProfile_HandheldCharging)           // без зарядки
         {
             return Board::GetSocType() == SysClkSocType_Mariko ? 614400000 : 460800000;
         }
-        else if (profile <= SysClkProfile_HandheldChargingUSB)  // зарядка
+        else if (profile <= SysClkProfile_HandheldChargingUSB)  // обычная зарядка
         {
             return 768000000;
         }
