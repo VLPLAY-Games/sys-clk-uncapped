@@ -3,11 +3,19 @@ set -e
 
 ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DIST_DIR="$ROOT_DIR/dist"
+
 CORES="$(nproc --all)"
 
 if [[ -n "$1" ]]; then
     DIST_DIR="$1"
 fi
+
+echo "--- CLEANING OLD BUILDS ---"
+rm -rf "$DIST_DIR"
+
+make -C "$ROOT_DIR/sysmodule" clean
+make -C "$ROOT_DIR/manager" clean
+make -C "$ROOT_DIR/overlay" clean
 
 echo "DIST_DIR: $DIST_DIR"
 echo "CORES: $CORES"
@@ -43,3 +51,5 @@ echo "*** assets ***"
 mkdir -p "$DIST_DIR/config/sys-clk"
 cp -vf "$ROOT_DIR/config.ini.template" "$DIST_DIR/config/sys-clk/config.ini.template"
 cp -vf "$ROOT_DIR/README.md" "$DIST_DIR/README.md"
+
+echo "--- DONE! Files are in $DIST_DIR ---"
