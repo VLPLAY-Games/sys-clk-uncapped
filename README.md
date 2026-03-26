@@ -78,15 +78,11 @@ handheld_mem=1600
 
 | Key | Description | Default |
 |-----|------------|--------|
-| poll_interval_ms | Profile check speed | 300 |
 | unlock_gpu_mariko | Remove cap (Mariko) | 0 |
 | unlock_gpu_erista | Remove cap (Erista) | 0 |
 | only_on_charging | Safety limiter | 1 |
-| temp_log_interval_ms | Temp logging | 0 |
 
 ---
-
-
 
 ### Uncapped Config Example
 
@@ -112,19 +108,6 @@ only_on_charging=1
 | Charging (Unlocked) | 921 MHz | 1267 MHz |
 
 *Requires unlock enabled*
-
----
-
-## Clock Table
-
-### CPU
-612, 714, 816, 918, 1020, 1122, 1224, 1326, 1428, 1581, 1683, 1785
-
-### GPU
-76, 153, 230, 307, 384, 460, 537, 614, 691, 768, 844, 921
-
-### MEM
-665, 800, 1065, 1331, 1600
 
 ---
 

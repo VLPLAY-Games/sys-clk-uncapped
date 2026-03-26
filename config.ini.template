@@ -1,8 +1,9 @@
 [values]
-; Defines how often sys-clk log temperatures, in milliseconds (set 0 to disable)
-temp_log_interval_ms=0
-; Defines how often sys-clk writes to the CSV, in milliseconds (set 0 to disable)
-csv_write_interval_ms=0
+
+; GPU frequency unlock
+unlock_gpu_mariko=1      ; Mariko up to ~1267 MHz
+unlock_gpu_erista=1      ; Erista up to ~921 MHz
+only_on_charging=1       ; 1 = limit unlocked clocks only while charging, 0 = always
 
 ; Example #1: BOTW
 ; Overclock CPU when docked
