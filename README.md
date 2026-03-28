@@ -3,7 +3,7 @@
 **Minimized & cleaned version** of sys-clk with GPU unlocking for Mariko/Erista.  
 Removed all logging (no log.txt, no context.csv), merged charging profiles into a single `charging` profile, and kept only essential features for overclocking.
 
-![2026032614281000](https://github.com/user-attachments/assets/d0d59ad2-686e-43f1-ba03-171f4391510f)
+![2026032813295700](https://github.com/user-attachments/assets/ecf0b60a-33d5-417c-bd4c-4c154ecd6002)
 
 ---
 
