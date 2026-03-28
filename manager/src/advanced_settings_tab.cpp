@@ -22,6 +22,7 @@
 
 #include <sysclk.h>
 #include "utils.h"
+#include "fan_settings_frame.h"
 
 AdvancedSettingsTab::AdvancedSettingsTab()
 {
@@ -90,4 +91,13 @@ AdvancedSettingsTab::AdvancedSettingsTab()
         });
         this->addView(eristaItem);
     }
+
+    // Fan Settings
+    this->addView(new brls::Header("Fan Settings"));
+    brls::ListItem* fanItem = new brls::ListItem("Fan Curve Configuration");
+    fanItem->setValue("Edit");
+    fanItem->getClickEvent()->subscribe([](brls::View* view) {
+        brls::Application::pushView(new FanSettingsFrame());
+    });
+    this->addView(fanItem);
 }
