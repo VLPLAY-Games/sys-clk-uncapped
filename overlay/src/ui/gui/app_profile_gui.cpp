@@ -78,9 +78,7 @@ void AppProfileGui::listUI()
 {
     this->addProfileUI(SysClkProfile_Docked);
     this->addProfileUI(SysClkProfile_Handheld);
-    this->addProfileUI(SysClkProfile_HandheldCharging);
-    this->addProfileUI(SysClkProfile_HandheldChargingOfficial);
-    this->addProfileUI(SysClkProfile_HandheldChargingUSB);
+    this->addProfileUI(SysClkProfile_Charging);
 }
 
 void AppProfileGui::changeTo(std::uint64_t applicationId)

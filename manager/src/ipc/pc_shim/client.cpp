@@ -51,8 +51,6 @@ Result sysclkIpcInitialize()
         g_server->SetProfile(0x010000000000F002, SysClkModule_CPU, SysClkProfile_Handheld, 1224);
         g_server->SetProfile(0x010000000000F002, SysClkModule_MEM, SysClkProfile_Handheld, 1600);
 
-        g_server->SetConfigValue(SysClkConfigValue_CsvWriteIntervalMs, 5000);
-
         g_server->AddFreq(SysClkModule_MEM, 665600000);
         g_server->AddFreq(SysClkModule_MEM, 800000000);
         g_server->AddFreq(SysClkModule_MEM, 1065600000);

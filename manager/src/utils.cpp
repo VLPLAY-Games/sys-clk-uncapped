@@ -83,7 +83,6 @@ void errorResult(std::string tag, Result rc)
 #endif
 }
 
-// TODO: Merge ticker for single line labels in Borealis and remove usage of this
 std::string formatListItemTitle(const std::string str, size_t maxScore)
 {
     size_t score = 0;

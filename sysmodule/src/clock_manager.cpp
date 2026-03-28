@@ -87,7 +87,7 @@ std::uint32_t ClockManager::GetMaxAllowedHz(SysClkModule module, SysClkProfile p
     if (module == SysClkModule_GPU)
     {
         bool onlyCharging = this->config->GetConfigValue(SysClkConfigValue_OnlyOnCharging) != 0;
-        bool isCharging = (profile >= SysClkProfile_HandheldCharging);
+        bool isCharging = (profile >= SysClkProfile_Charging);
         SysClkSocType soc = Board::GetSocType();
 
         // 1. If "Only on charging" is enabled but not charging — stock only

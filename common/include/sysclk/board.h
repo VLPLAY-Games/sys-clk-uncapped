@@ -24,9 +24,7 @@ typedef enum
 typedef enum
 {
     SysClkProfile_Handheld = 0,
-    SysClkProfile_HandheldCharging,
-    SysClkProfile_HandheldChargingUSB,
-    SysClkProfile_HandheldChargingOfficial,
+    SysClkProfile_Charging,
     SysClkProfile_Docked,
     SysClkProfile_EnumMax
 } SysClkProfile;
@@ -114,12 +112,8 @@ static inline const char* sysclkFormatProfile(SysClkProfile profile, bool pretty
             return pretty ? "Docked" : "docked";
         case SysClkProfile_Handheld:
             return pretty ? "Handheld" : "handheld";
-        case SysClkProfile_HandheldCharging:
-            return pretty ? "Charging" : "handheld_charging";
-        case SysClkProfile_HandheldChargingUSB:
-            return pretty ? "USB Charger" : "handheld_charging_usb";
-        case SysClkProfile_HandheldChargingOfficial:
-            return pretty ? "Official Charger" : "handheld_charging_official";
+        case SysClkProfile_Charging:
+            return pretty ? "Charging" : "charging";
         default:
             return NULL;
     }

@@ -142,11 +142,8 @@ std::uint32_t Config::GetAutoClockHz(std::uint64_t tid, SysClkModule module, Sys
     {
         case SysClkProfile_Handheld:
             return FindClockHzFromProfiles(tid, module, {SysClkProfile_Handheld});
-        case SysClkProfile_HandheldCharging:
-        case SysClkProfile_HandheldChargingUSB:
-            return FindClockHzFromProfiles(tid, module, {SysClkProfile_HandheldChargingUSB, SysClkProfile_HandheldCharging, SysClkProfile_Handheld});
-        case SysClkProfile_HandheldChargingOfficial:
-            return FindClockHzFromProfiles(tid, module, {SysClkProfile_HandheldChargingOfficial, SysClkProfile_HandheldCharging, SysClkProfile_Handheld});
+        case SysClkProfile_Charging:
+            return FindClockHzFromProfiles(tid, module, {SysClkProfile_Charging, SysClkProfile_Handheld});
         case SysClkProfile_Docked:
             return FindClockHzFromProfiles(tid, module, {SysClkProfile_Docked});
         default:

@@ -142,13 +142,9 @@ SysClkProfile Board::GetProfile()
     rc = psmGetChargerType(&chargerType);
     ASSERT_RESULT_OK(rc, "psmGetChargerType");
 
-    if(chargerType == PsmChargerType_EnoughPower)
+    if(chargerType == PsmChargerType_EnoughPower || chargerType == PsmChargerType_LowPower)
     {
-        return SysClkProfile_HandheldChargingOfficial;
-    }
-    else if(chargerType == PsmChargerType_LowPower)
-    {
-        return SysClkProfile_HandheldChargingUSB;
+        return SysClkProfile_Charging;
     }
 
     return SysClkProfile_Handheld;

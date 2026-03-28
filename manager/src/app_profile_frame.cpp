@@ -60,7 +60,6 @@ AppProfileFrame::AppProfileFrame(Title* title) : ThumbnailFrame(), title(title)
 
         if (R_SUCCEEDED(rc))
         {
-            // TODO: set the tick mark color to blue/green once borealis has rich text support
             brls::Application::notify("\uE14B Profile saved");
             brls::Application::popView(brls::ViewAnimation::SLIDE_RIGHT);
         }
@@ -76,10 +75,7 @@ AppProfileFrame::AppProfileFrame(Title* title) : ThumbnailFrame(), title(title)
 
     this->addFreqs(list, SysClkProfile_Docked);
     this->addFreqs(list, SysClkProfile_Handheld);
-
-    this->addFreqs(list, SysClkProfile_HandheldCharging);
-    this->addFreqs(list, SysClkProfile_HandheldChargingOfficial);
-    this->addFreqs(list, SysClkProfile_HandheldChargingUSB);
+    this->addFreqs(list, SysClkProfile_Charging);
 
     this->setContentView(list);
 }
