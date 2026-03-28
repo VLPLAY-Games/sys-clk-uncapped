@@ -32,8 +32,8 @@ NO_ICON		:=	1
 #---------------------------------------------------------------------------------
 # version control constants
 #---------------------------------------------------------------------------------
-TARGET_VERSION	:= $(shell git describe --dirty --always --tags)
-APP_VERSION		:= $(TARGET_VERSION)
+TARGET_VERSION	:= v2.0-201-mod
+APP_VERSION		:= v2.0-201-mod
 
 #---------------------------------------------------------------------------------
 # options for code generation

@@ -30,10 +30,5 @@ class AdvancedSettingsTab : public brls::List
         AdvancedSettingsTab();
 
     private:
-        std::string getDescriptionForConfig(SysClkConfigValue config);
-
-        bool isLoggingEnabled();
-        void setLoggingEnabled(bool value);
-
         SysClkConfigValueList configValues;
 };

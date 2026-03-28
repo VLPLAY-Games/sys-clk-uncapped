@@ -30,7 +30,7 @@ LIBNAMES	:=	minIni nxExt
 #---------------------------------------------------------------------------------
 # version control constants
 #---------------------------------------------------------------------------------
-TARGET_VERSION	:= $(shell git describe --dirty --always --tags)
+TARGET_VERSION	:= v2.0-201-mod
 
 #---------------------------------------------------------------------------------
 # options for code generation

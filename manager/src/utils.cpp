@@ -25,6 +25,7 @@
 #include "ipc/client.h"
 
 uint32_t g_freq_table_hz[SysClkModule_EnumMax][SYSCLK_FREQ_LIST_MAX+1];
+SysClkSocType g_socType = SysClkSocType_Erista; // default
 
 Result cacheFreqList()
 {

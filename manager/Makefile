@@ -54,8 +54,8 @@ APP_RESOURCES		:=	romfs:/
 #---------------------------------------------------------------------------------
 # version control constants
 #---------------------------------------------------------------------------------
-TARGET_VERSION	:= $(shell git describe --dirty --always --tags)
-APP_VERSION		:= 2.0.1-mod
+TARGET_VERSION	:= v2.0-201-mod
+APP_VERSION		:= v2.0-201-mod
 
 #---------------------------------------------------------------------------------
 # options for code generation

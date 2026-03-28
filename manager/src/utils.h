@@ -30,6 +30,7 @@
 #define APP_ASSET(p) APP_RESOURCES p
 
 extern uint32_t g_freq_table_hz[SysClkModule_EnumMax][SYSCLK_FREQ_LIST_MAX+1];
+extern SysClkSocType g_socType;
 
 Result cacheFreqList();
 std::string formatListItemTitle(const std::string str, size_t maxScore = 140);

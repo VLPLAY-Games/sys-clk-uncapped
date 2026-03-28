@@ -29,6 +29,7 @@
 
 #include "ipc/client.h"
 #include "ipc/ipc.h"
+#include "utils.h"
 
 int main(int argc, char* argv[])
 {
@@ -50,6 +51,24 @@ int main(int argc, char* argv[])
     }
 
     uint32_t apiVersion;
+
+    // Get SoC type
+    splInitialize();
+    u64 sku;
+    Result rcSpl = splGetConfig(SplConfigItem_HardwareType, &sku);
+    splExit();
+
+    if (R_SUCCEEDED(rcSpl))
+    {
+        switch(sku)
+        {
+            case 2 ... 5:
+                g_socType = SysClkSocType_Mariko;
+                break;
+            default:
+                g_socType = SysClkSocType_Erista;
+        }
+    }
 
     // Check that sys-clk is running
     if (!sysclkIpcRunning())

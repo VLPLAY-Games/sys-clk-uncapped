@@ -1,6 +1,7 @@
 # sys-clk-uncapped (VL_PLAY Mod)
 
-Modified version of **sys-clk** with advanced GPU frequency unlocking for Mariko and Erista consoles.
+**Minimized & cleaned version** of sys-clk with GPU unlocking for Mariko/Erista.  
+Removed all logging (no log.txt, no context.csv), merged charging profiles into a single `charging` profile, and kept only essential features for overclocking.
 
 ![2026032614281000](https://github.com/user-attachments/assets/d0d59ad2-686e-43f1-ba03-171f4391510f)
 
@@ -35,25 +36,24 @@ Requires Atmosphère + Tesla overlay.
 
 ## Relevant Files
 
-- `/config/sys-clk/config.ini` — config
-- `/config/sys-clk/log.txt` — logs
-- `/config/sys-clk/context.csv` — telemetry
-- `/switch/sys-clk-manager.nro` — manager
-- `/switch/.overlays/sys-clk-overlay.ovl` — overlay
-- `/atmosphere/.../exefs.nsp` — sysmodule
+- `/config/sys-clk/config.ini` — config file
+- `/switch/sys-clk-manager.nro` — graphical manager
+- `/switch/.overlays/sys-clk-overlay.ovl` — Tesla overlay
+- `/atmosphere/contents/00FF00706C6B6D6F/exefs.nsp` — sysmodule
 
 ---
 
 ## Config
+
 
 ```
 [Application Title ID]
 docked_cpu=
 docked_gpu=
 docked_mem=
-handheld_charging_cpu=
-handheld_charging_gpu=
-handheld_charging_mem=
+charging_cpu=
+charging_gpu=
+charging_mem=
 handheld_cpu=
 handheld_gpu=
 handheld_mem=
@@ -68,7 +68,7 @@ If value = 0 → ignored (stock used)
 ```
 [01007EF00011E000]
 docked_cpu=1224
-handheld_charging_cpu=1224
+charging_cpu=1224
 handheld_mem=1600
 ```
 
@@ -125,3 +125,4 @@ only_on_charging=1
 This mod extends sys-clk with:
 - Full GPU unlock (Mariko & Erista)
 - Optional safety controls
+- Clean, log-free operation
