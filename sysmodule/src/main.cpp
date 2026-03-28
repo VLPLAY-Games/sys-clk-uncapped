@@ -90,8 +90,6 @@ int main(int argc, char** argv)
         ClockManager* clockMgr = new ClockManager();
         IpcService* ipcSrv = new IpcService(clockMgr);
 
-        FileUtils::LogLine("Ready");
-
         clockMgr->SetRunning(true);
         clockMgr->GetConfig()->SetEnabled(true);
         ipcSrv->SetRunning(true);
@@ -110,15 +108,13 @@ int main(int argc, char** argv)
     }
     catch (const std::exception &ex)
     {
-        FileUtils::LogLine("[!] %s", ex.what());
+        // exception ignored
     }
     catch (...)
     {
-        std::exception_ptr p = std::current_exception();
-        FileUtils::LogLine("[!?] %s", p ? p.__cxa_exception_type()->name() : "...");
+        // exception ignored
     }
 
-    FileUtils::LogLine("Exit");
     svcSleepThread(1000000ULL);
     FileUtils::Exit();
     return 0;

@@ -32,8 +32,6 @@ ClockManager::ClockManager()
     }
 
     this->running = false;
-    this->lastTempLogNs = 0;
-    this->lastCsvWriteNs = 0;
 }
 
 ClockManager::~ClockManager()
@@ -92,27 +90,26 @@ std::uint32_t ClockManager::GetMaxAllowedHz(SysClkModule module, SysClkProfile p
         bool isCharging = (profile >= SysClkProfile_HandheldCharging);
         SysClkSocType soc = Board::GetSocType();
 
-        // 1. Если включено "Only on charging", но зарядки нет — только сток
+        // 1. If "Only on charging" is enabled but not charging — stock only
         if (onlyCharging && !isCharging) {
             return (soc == SysClkSocType_Mariko) ? 614400000 : 460800000;
         }
 
-        // 2. Логика для Mariko (V2, Lite, OLED)
+        // 2. Mariko (V2, Lite, OLED) logic
         if (soc == SysClkSocType_Mariko && this->config->GetConfigValue(SysClkConfigValue_UnlockGpuMariko)) {
             return 1267200000; 
         }
 
-        // 3. Логика для Erista (V1)
+        // 3. Erista (V1) logic
         if (soc == SysClkSocType_Erista && this->config->GetConfigValue(SysClkConfigValue_UnlockGpuErista)) {
             return 921600000;
         }
 
-        // 4. Сток лимиты по умолчанию
+        // 4. Default stock limits
         return isCharging ? 768000000 : (soc == SysClkSocType_Mariko ? 614400000 : 460800000);
     }
     return 0;
 }
-
 
 std::uint32_t ClockManager::GetNearestHz(SysClkModule module, std::uint32_t inHz, std::uint32_t maxHz)
 {
@@ -138,19 +135,6 @@ std::uint32_t ClockManager::GetNearestHz(SysClkModule module, std::uint32_t inHz
     return freqs[i];
 }
 
-bool ClockManager::ConfigIntervalTimeout(SysClkConfigValue intervalMsConfigValue, std::uint64_t ns, std::uint64_t* lastLogNs)
-{
-    std::uint64_t logInterval = this->GetConfig()->GetConfigValue(intervalMsConfigValue) * 1000000ULL;
-    bool shouldLog = logInterval && ((ns - *lastLogNs) > logInterval);
-
-    if(shouldLog)
-    {
-        *lastLogNs = ns;
-    }
-
-    return shouldLog;
-}
-
 void ClockManager::RefreshFreqTableRow(SysClkModule module)
 {
     std::scoped_lock lock{this->contextMutex};
@@ -158,7 +142,6 @@ void ClockManager::RefreshFreqTableRow(SysClkModule module)
     std::uint32_t freqs[SYSCLK_FREQ_LIST_MAX];
     std::uint32_t count;
 
-    FileUtils::LogLine("[mgr] %s freq list refresh", Board::GetModuleName(module, true));
     Board::GetFreqList(module, &freqs[0], SYSCLK_FREQ_LIST_MAX, &count);
 
     std::uint32_t* hz = &this->freqTable[module].list[0];
@@ -171,13 +154,9 @@ void ClockManager::RefreshFreqTableRow(SysClkModule module)
         }
 
         *hz = freqs[i];
-        FileUtils::LogLine("[mgr] %02u - %u - %u.%u MHz", this->freqTable[module].count, *hz, *hz/1000000, *hz/100000 - *hz/1000000*10);
-
         this->freqTable[module].count++;
         hz++;
     }
-
-    FileUtils::LogLine("[mgr] count = %u", this->freqTable[module].count);
 }
 
 void ClockManager::Tick()
@@ -204,13 +183,6 @@ void ClockManager::Tick()
 
                 if (nearestHz != this->context->freqs[module] && this->context->enabled)
                 {
-                    FileUtils::LogLine(
-                        "[mgr] %s clock set : %u.%u MHz (target = %u.%u MHz)",
-                        Board::GetModuleName((SysClkModule)module, true),
-                        nearestHz/1000000, nearestHz/100000 - nearestHz/1000000*10,
-                        targetHz/1000000, targetHz/100000 - targetHz/1000000*10
-                    );
-
                     Board::SetHz((SysClkModule)module, nearestHz);
                     this->context->freqs[module] = nearestHz;
                 }
@@ -232,14 +204,12 @@ bool ClockManager::RefreshContext()
     if(enabled != this->context->enabled)
     {
         this->context->enabled = enabled;
-        FileUtils::LogLine("[mgr] " TARGET " status: %s", enabled ? "enabled" : "disabled");
         hasChanged = true;
     }
 
     std::uint64_t applicationId = ProcessManagement::GetCurrentApplicationId();
     if (applicationId != this->context->applicationId)
     {
-        FileUtils::LogLine("[mgr] TitleID change: %016lX", applicationId);
         this->context->applicationId = applicationId;
         hasChanged = true;
     }
@@ -247,7 +217,6 @@ bool ClockManager::RefreshContext()
     SysClkProfile profile = Board::GetProfile();
     if (profile != this->context->profile)
     {
-        FileUtils::LogLine("[mgr] Profile change: %s", Board::GetProfileName(profile, true));
         this->context->profile = profile;
         hasChanged = true;
     }
@@ -265,7 +234,6 @@ bool ClockManager::RefreshContext()
         hz = Board::GetHz((SysClkModule)module);
         if (hz != 0 && hz != this->context->freqs[module])
         {
-            FileUtils::LogLine("[mgr] %s clock change: %u.%u MHz", Board::GetModuleName((SysClkModule)module, true), hz/1000000, hz/100000 - hz/1000000*10);
             this->context->freqs[module] = hz;
             hasChanged = true;
         }
@@ -273,69 +241,30 @@ bool ClockManager::RefreshContext()
         hz = this->GetConfig()->GetOverrideHz((SysClkModule)module);
         if (hz != this->context->overrideFreqs[module])
         {
-            if(hz)
-            {
-                FileUtils::LogLine("[mgr] %s override change: %u.%u MHz", Board::GetModuleName((SysClkModule)module, true), hz/1000000, hz/100000 - hz/1000000*10);
-            }
-            else
-            {
-                FileUtils::LogLine("[mgr] %s override disabled", Board::GetModuleName((SysClkModule)module, true));
-            }
             this->context->overrideFreqs[module] = hz;
             hasChanged = true;
         }
     }
 
-    std::uint64_t ns = armTicksToNs(armGetSystemTick());
-
-    // temperatures do not and should not force a refresh, hasChanged untouched
-    std::uint32_t millis = 0;
-    bool shouldLogTemp = this->ConfigIntervalTimeout(SysClkConfigValue_TempLogIntervalMs, ns, &this->lastTempLogNs);
+    // temperatures, power, real freqs, ram load – update context without logging
     for (unsigned int sensor = 0; sensor < SysClkThermalSensor_EnumMax; sensor++)
     {
-        millis = Board::GetTemperatureMilli((SysClkThermalSensor)sensor);
-        if(shouldLogTemp)
-        {
-            FileUtils::LogLine("[mgr] %s temp: %u.%u °C", Board::GetThermalSensorName((SysClkThermalSensor)sensor, true), millis/1000, (millis - millis/1000*1000) / 100);
-        }
-        this->context->temps[sensor] = millis;
+        this->context->temps[sensor] = Board::GetTemperatureMilli((SysClkThermalSensor)sensor);
     }
 
-    // power stats do not and should not force a refresh, hasChanged untouched
-    std::int32_t mw = 0;
-    bool shouldLogPower = this->ConfigIntervalTimeout(SysClkConfigValue_PowerLogIntervalMs, ns, &this->lastPowerLogNs);
     for (unsigned int sensor = 0; sensor < SysClkPowerSensor_EnumMax; sensor++)
     {
-        mw = Board::GetPowerMw((SysClkPowerSensor)sensor);
-        if(shouldLogPower)
-        {
-            FileUtils::LogLine("[mgr] Power %s: %d mW", Board::GetPowerSensorName((SysClkPowerSensor)sensor, false), mw);
-        }
-        this->context->power[sensor] = mw;
+        this->context->power[sensor] = Board::GetPowerMw((SysClkPowerSensor)sensor);
     }
 
-    // real freqs do not and should not force a refresh, hasChanged untouched
-    std::uint32_t realHz = 0;
-    bool shouldLogFreq = this->ConfigIntervalTimeout(SysClkConfigValue_FreqLogIntervalMs, ns, &this->lastFreqLogNs);
     for (unsigned int module = 0; module < SysClkModule_EnumMax; module++)
     {
-        realHz = Board::GetRealHz((SysClkModule)module);
-        if(shouldLogFreq)
-        {
-            FileUtils::LogLine("[mgr] %s real freq: %u.%u MHz", Board::GetModuleName((SysClkModule)module, true), realHz/1000000, realHz/100000 - realHz/1000000*10);
-        }
-        this->context->realFreqs[module] = realHz;
+        this->context->realFreqs[module] = Board::GetRealHz((SysClkModule)module);
     }
 
-    // ram load do not and should not force a refresh, hasChanged untouched
     for (unsigned int loadSource = 0; loadSource < SysClkRamLoad_EnumMax; loadSource++)
     {
         this->context->ramLoad[loadSource] = Board::GetRamLoad((SysClkRamLoad)loadSource);
-    }
-
-    if(this->ConfigIntervalTimeout(SysClkConfigValue_CsvWriteIntervalMs, ns, &this->lastCsvWriteNs))
-    {
-        FileUtils::WriteContextToCsv(this->context);
     }
 
     return hasChanged;

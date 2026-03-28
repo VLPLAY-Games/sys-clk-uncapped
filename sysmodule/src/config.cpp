@@ -50,17 +50,11 @@ Config* Config::CreateDefault()
 
 void Config::Load()
 {
-    FileUtils::LogLine("[cfg] Reading %s", this->path.c_str());
-
     this->Close();
     this->mtime = this->CheckModificationTime();
-    if(!this->mtime)
+    if(this->mtime)
     {
-        FileUtils::LogLine("[cfg] Error finding file");
-    }
-    else if (!ini_browse(&BrowseIniFunc, this, this->path.c_str()))
-    {
-        FileUtils::LogLine("[cfg] Error loading file");
+        ini_browse(&BrowseIniFunc, this, this->path.c_str());
     }
 
     this->loaded = true;
@@ -283,14 +277,12 @@ int Config::BrowseIniFunc(const char* section, const char* key, const char* valu
                 if(!sysclkValidConfigValue((SysClkConfigValue)kval, input))
                 {
                     input = sysclkDefaultConfigValue((SysClkConfigValue)kval);
-                    FileUtils::LogLine("[cfg] Invalid value for key '%s' in section '%s': using default %d", key, section, input);
                 }
                 config->configValues[kval] = input;
                 return 1;
             }
         }
 
-        FileUtils::LogLine("[cfg] Skipping key '%s' in section '%s': Unrecognized config value", key, section);
         return 1;
     }
 
@@ -298,7 +290,6 @@ int Config::BrowseIniFunc(const char* section, const char* key, const char* valu
 
     if(!tid || strlen(section) != 16)
     {
-        FileUtils::LogLine("[cfg] Skipping key '%s' in section '%s': Invalid TitleID", key, section);
         return 1;
     }
 
@@ -329,14 +320,12 @@ int Config::BrowseIniFunc(const char* section, const char* key, const char* valu
 
     if(parsedModule == SysClkModule_EnumMax || parsedProfile == SysClkProfile_EnumMax)
     {
-        FileUtils::LogLine("[cfg] Skipping key '%s' in section '%s': Unrecognized key", key, section);
         return 1;
     }
 
     std::uint32_t mhz = strtoul(value, NULL, 10);
     if(!mhz)
     {
-        FileUtils::LogLine("[cfg] Skipping key '%s' in section '%s': Invalid value", key, section);
         return 1;
     }
 

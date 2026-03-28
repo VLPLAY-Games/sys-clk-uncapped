@@ -72,10 +72,7 @@ void IpcService::ProcessThreadFunc(void* arg)
             {
                 return;
             }
-            if(rc != KERNELRESULT(ConnectionClosed))
-            {
-                FileUtils::LogLine("[ipc] ipcServerProcess: [0x%x] %04d-%04d", rc, R_MODULE(rc), R_DESCRIPTION(rc));
-            }
+            // removed logging
         }
     }
 }
@@ -175,7 +172,6 @@ Result IpcService::ServiceHandlerFunc(void* arg, const IpcServerRequest* r, u8* 
 Result IpcService::GetApiVersion(u32* out_version)
 {
     *out_version = SYSCLK_IPC_API_VERSION;
-
     return 0;
 }
 
@@ -185,21 +181,18 @@ Result IpcService::GetVersionString(char* out_buf, size_t bufSize)
     {
         strncpy(out_buf, TARGET_VERSION, bufSize-1);
     }
-
     return 0;
 }
 
 Result IpcService::GetCurrentContext(SysClkContext* out_ctx)
 {
     *out_ctx = this->clockMgr->GetCurrentContext();
-
     return 0;
 }
 
 Result IpcService::Exit()
 {
     this->clockMgr->SetRunning(false);
-
     return 0;
 }
 
@@ -212,7 +205,6 @@ Result IpcService::GetProfileCount(std::uint64_t* tid, std::uint8_t* out_count)
     }
 
     *out_count = config->GetProfileCount(*tid);
-
     return 0;
 }
 
@@ -225,7 +217,6 @@ Result IpcService::GetProfiles(std::uint64_t* tid, SysClkTitleProfileList* out_p
     }
 
     config->GetProfiles(*tid, out_profiles);
-
     return 0;
 }
 
@@ -251,7 +242,6 @@ Result IpcService::SetEnabled(std::uint8_t* enabled)
 {
     Config* config = this->clockMgr->GetConfig();
     config->SetEnabled(*enabled);
-
     return 0;
 }
 
@@ -267,7 +257,6 @@ Result IpcService::SetOverride(SysClkIpc_SetOverride_Args* args)
 
     Config* config = this->clockMgr->GetConfig();
     config->SetOverrideHz(module, hz);
-
     return 0;
 }
 
@@ -280,7 +269,6 @@ Result IpcService::GetConfigValues(SysClkConfigValueList* out_configValues)
     }
 
     config->GetConfigValues(out_configValues);
-
     return 0;
 }
 
@@ -315,6 +303,5 @@ Result IpcService::GetFreqList(SysClkIpc_GetFreqList_Args* args, std::uint32_t* 
     }
 
     this->clockMgr->GetFreqList(args->module, out_list, args->maxCount, out_count);
-
     return 0;
 }
