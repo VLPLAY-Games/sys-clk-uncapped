@@ -79,6 +79,7 @@ std::string FanSettingsFrame::serializeTable(const std::vector<FanTableEntry>& t
     return result;
 }
 
+// --- Методы по умолчанию (для линковки) ---
 std::string FanSettingsFrame::getDefaultHandheldTable() {
     return "[[-1000000, 40000, 0, 0], [36000, 43000, 51, 51], [43000, 48000, 51, 102], [48000, 53000, 102, 153], [53000, 1000000, 153, 153], [48000, 1000000, 153, 153]]";
 }
@@ -219,70 +220,66 @@ void FanSettingsFrame::saveToIni() {
 class FanTableRow : public brls::ListItem {
 public:
     FanTableRow(const std::string& label, FanTableEntry* entry)
-        : brls::ListItem(label), entry(entry), activeField(0) {
+        : brls::ListItem(label), entry(entry), editing(false), activeField(0) {
         updateValue();
     }
 
     void onFocusGained() override {
         brls::ListItem::onFocusGained();
 
-        // Стрелки вверх/вниз переключают между строками (по умолчанию List делает это)
-        // Стрелки влево/вправо переключают активное поле
-        registerAction("Switch Field Left", brls::Key::DLEFT, [this]() { activeField = 0; updateValue(); return true; });
-        registerAction("Switch Field Right", brls::Key::DRIGHT, [this]() { activeField = 1; updateValue(); return true; });
+        // Стрелки влево/вправо переключают активное поле, если не в редактировании
+        registerAction("Switch Field Left", brls::Key::DLEFT, [this]() { 
+            if(!editing) activeField = 0; updateValue(); return true; 
+        });
+        registerAction("Switch Field Right", brls::Key::DRIGHT, [this]() { 
+            if(!editing) activeField = 1; updateValue(); return true; 
+        });
 
-        // Увеличение/уменьшение значения активного поля
-        registerAction("Increase", brls::Key::DUP, [this]() { changeValue(1); return true; });
-        registerAction("Decrease", brls::Key::DDOWN, [this]() { changeValue(-1); return true; });
-        registerAction("Increase10", brls::Key::R, [this]() { changeValue(10); return true; });
-        registerAction("Decrease10", brls::Key::L, [this]() { changeValue(-10); return true; });
-
-        // Прямой ввод через A
+        // A → активировать редактирование выбранного поля
         registerAction("Edit", brls::Key::A, [this]() {
-            SwkbdConfig kbd;
-            char tmp[16] = {0};
-            swkbdCreate(&kbd, 0);
-            swkbdConfigMakePresetDefault(&kbd);
-            swkbdConfigSetGuideText(&kbd, "Enter min,max PWM");
-            swkbdConfigSetInitialText(&kbd, (std::to_string(entry->minPwm)+","+std::to_string(entry->maxPwm)).c_str());
-            swkbdConfigSetType(&kbd, SwkbdType_NumPad);
-
-            if (swkbdShow(&kbd, tmp, sizeof(tmp)) == 0) {
-                std::string s(tmp);
-                auto comma = s.find(',');
-                if (comma != std::string::npos) {
-                    try {
-                        int minv = std::stoi(s.substr(0, comma));
-                        int maxv = std::stoi(s.substr(comma+1));
-                        setValues(minv, maxv);
-                    } catch (...) {}
-                }
-            }
-            swkbdClose(&kbd);
+            editing = true;
             return true;
         });
+
+        // B → выйти из редактирования
+        registerAction("CancelEdit", brls::Key::B, [this]() {
+            if(editing) {
+                editing = false;
+                updateValue();
+                return true;
+            }
+            return false;
+        });
+
+        // Изменение значений в режиме редактирования
+        registerAction("Increase", brls::Key::DUP, [this]() { if(editing) changeValue(1); return editing; });
+        registerAction("Decrease", brls::Key::DDOWN, [this]() { if(editing) changeValue(-1); return editing; });
+        registerAction("Increase10", brls::Key::R, [this]() { if(editing) changeValue(10); return editing; });
+        registerAction("Decrease10", brls::Key::L, [this]() { if(editing) changeValue(-10); return editing; });
     }
 
 private:
     FanTableEntry* entry;
+    bool editing;
     int activeField; // 0 = min, 1 = max
 
     void updateValue() {
-        std::string display = (activeField == 0 ? "▶ " : "   ") + std::to_string(entry->minPwm) +
-                              " / " +
-                              (activeField == 1 ? "▶ " : "   ") + std::to_string(entry->maxPwm);
+        std::string display = 
+            (activeField == 0 ? "▶ " : "   ") + std::to_string(entry->minPwm) +
+            " / " +
+            (activeField == 1 ? "▶ " : "   ") + std::to_string(entry->maxPwm);
         setValue(display);
     }
 
     void setValues(int minv, int maxv) {
-        if (minv > maxv) std::swap(minv, maxv);
+        if(minv > maxv) std::swap(minv, maxv);
         entry->minPwm = std::clamp(minv, 0, 255);
         entry->maxPwm = std::clamp(maxv, 0, 255);
         updateValue();
     }
 
     void changeValue(int delta) {
-        if (activeField == 0) setValues(entry->minPwm + delta, entry->maxPwm);
+        if(activeField == 0) setValues(entry->minPwm + delta, entry->maxPwm);
         else setValues(entry->minPwm, entry->maxPwm + delta);
     }
 };
@@ -292,14 +289,14 @@ void FanSettingsFrame::buildUI() {
     auto* list = new brls::List();
 
     list->addView(new brls::Header("Handheld Mode"));
-    for (auto& entry : handheldTable) {
+    for(auto& entry : handheldTable) {
         char label[64];
         snprintf(label, sizeof(label), "%d°C - %d°C", entry.minTemp / 1000, entry.maxTemp / 1000);
         list->addView(new FanTableRow(label, &entry));
     }
 
     list->addView(new brls::Header("Docked Mode"));
-    for (auto& entry : dockedTable) {
+    for(auto& entry : dockedTable) {
         char label[64];
         snprintf(label, sizeof(label), "%d°C - %d°C", entry.minTemp / 1000, entry.maxTemp / 1000);
         list->addView(new FanTableRow(label, &entry));
