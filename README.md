@@ -4,7 +4,8 @@
 Removed all logging (no log.txt, no context.csv), merged charging profiles into a single `charging` profile, and kept only essential features for overclocking.
 **New:** Custom fan curves support via `/atmosphere/config/system_settings.ini`.
 
-![2026032813295700](https://github.com/user-attachments/assets/ecf0b60a-33d5-417c-bd4c-4c154ecd6002)
+![2026032915280900](https://github.com/user-attachments/assets/f6f3b689-3ba2-4adb-87c4-2b9e17aecece)
+![2026032915281500](https://github.com/user-attachments/assets/39335c6c-9e99-4aa2-92c1-c784b6d30743)
 
 ## Version History
 
