@@ -3,12 +3,12 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <cmath>
 
 #include <switch.h>
 #include <borealis.hpp>
@@ -86,7 +86,7 @@ namespace {
 
         const double t = double(temp - e.minTemp) / double(e.maxTemp - e.minTemp);
         const double pwm = double(e.minPwm) + t * double(e.maxPwm - e.minPwm);
-        return std::clamp(int(std::lround(pwm)), 0, 255);
+        return std::clamp(static_cast<int>(std::lround(pwm)), 0, 255);
     }
 
     // Вычисляет PWM в конкретной температурной точке по сырой таблице OFW.
@@ -574,6 +574,14 @@ void FanSettingsFrame::buildUI() {
         FanTableEntry* next = (i + 1 < dockedTable.size()) ? &dockedTable[i + 1] : nullptr;
         list->addView(new FanTableRow(label, &dockedTable[i], next));
     }
+
+    auto* saveItem = new brls::ListItem("Save changes");
+    saveItem->registerAction("Save", brls::Key::A, [this]() {
+        saveToIni();
+        return true;
+    });
+    list->addView(new brls::Header("Actions"));
+    list->addView(saveItem);
 
     this->setContentView(list);
 }

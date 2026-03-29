@@ -2,8 +2,15 @@
 
 **Minimized & cleaned version** of sys-clk with GPU unlocking for Mariko/Erista.  
 Removed all logging (no log.txt, no context.csv), merged charging profiles into a single `charging` profile, and kept only essential features for overclocking.
+**New:** Custom fan curves support via `/atmosphere/config/system_settings.ini`.
 
 ![2026032813295700](https://github.com/user-attachments/assets/ecf0b60a-33d5-417c-bd4c-4c154ecd6002)
+
+## Version History
+
+- **v1.0** – Added GPU unlock for Mariko & Erista  
+- **v2.0** – Minimized & cleaned version (removed logging, merged charging profiles)  
+- **v3.0** – Added UI for custom fan curve configuration  
 
 ---
 
@@ -20,14 +27,19 @@ Use at your own risk. Authors are NOT responsible for any damage or data loss.
 - **Unlock GPU limits (Mariko):** Removes 768 MHz cap while charging (V2/Lite/OLED)
 - **Unlock GPU limits (Erista):** Removes 768 MHz cap (up to 921 MHz)
 - **Only on Charging:** Limits unsafe clocks to charging state (default ON)
+- **Custom Fan Curves:** Control Switch fan speed per temperature in portable and docked modes
+  - Configurable via `/atmosphere/config/system_settings.ini`
+  - Fan speeds in **percent** (0–100%) mapped to temperatures in **°C**
+  - Supports fixed points from 35°C to 80°C with 5°C steps
 
 ---
 
 ## Installation
 
 Copy to SD root:
-- `atmosphere`
-- `switch`
+
+- `atmosphere`  
+- `switch`  
 - `config` (if fresh install)
 
 Requires Atmosphère + Tesla overlay.
@@ -99,6 +111,15 @@ unlock_gpu_erista=1
 only_on_charging=1
 ```
 
+## Custom Fan Curves
+
+Fan curves can now be customized in Advanced Settings
+
+**Notes:**  
+
+- After changing fan curves, **reboot** for changes to take effect.  
+- Use this to increase cooling at lower temperatures or fully unlock fan speed.
+
 ## Frequency Capping
 
 | Mode | GPU (Erista) | GPU (Mariko) |
@@ -126,3 +147,4 @@ This mod extends sys-clk with:
 - Full GPU unlock (Mariko & Erista)
 - Optional safety controls
 - Clean, log-free operation
+- **Customizable fan curves** for both docked and handheld modes
