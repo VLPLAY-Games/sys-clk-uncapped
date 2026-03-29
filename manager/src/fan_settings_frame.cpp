@@ -272,7 +272,7 @@ void FanSettingsFrame::saveToIni() {
 class FanTableRow : public brls::ListItem {
 public:
     FanTableRow(const std::string& label, FanTableEntry* tableEntry, FanTableEntry* nextEntry = nullptr)
-        : brls::ListItem(label), entry(tableEntry), next(entry), editing(false) {
+        : brls::ListItem(label), entry(tableEntry), next(nextEntry), editing(false) {
         updateValue();
     }
 
@@ -291,15 +291,15 @@ public:
             return true;
         });
 
-        registerAction("+10", brls::Key::R, [this]() {
+        registerAction("+5", brls::Key::R, [this]() {
             if (!editing) return false;
-            changeValue(10);
+            changeValue(5);
             return true;
         });
 
-        registerAction("-10", brls::Key::L, [this]() {
+        registerAction("-5", brls::Key::L, [this]() {
             if (!editing) return false;
-            changeValue(-10);
+            changeValue(-5);
             return true;
         });
 
@@ -335,6 +335,15 @@ private:
         percent = std::clamp(percent, 0, 100);
         int pwm = percentToPwm(percent);
 
+        int lowerBound = entry->minPwm;
+        int upperBound = next ? next->maxPwm : 255;
+
+        if (lowerBound > upperBound) {
+            upperBound = lowerBound;
+        }
+
+        pwm = std::clamp(pwm, lowerBound, upperBound);
+
         entry->maxPwm = pwm;
         if (next) {
             next->minPwm = pwm;
@@ -343,9 +352,9 @@ private:
         updateValue();
     }
 
-    void changeValue(int delta) {
+    void changeValue(int deltaPercent) {
         int currentPercent = pwmToPercent(entry->maxPwm);
-        setPercentValue(currentPercent + delta);
+        setPercentValue(currentPercent + deltaPercent);
     }
 };
 
@@ -369,15 +378,6 @@ void FanSettingsFrame::buildUI() {
         list->addView(new FanTableRow(label, &dockedTable[i], next));
     }
 
-    saveButton = new brls::Button(brls::ButtonStyle::BORDERLESS);
-    saveButton->setLabel("Save");
-    saveButton->getClickEvent()->subscribe([this](brls::View*) {
-        saveToIni();
-        brls::Application::popView();
-        return true;
-    });
-
-    list->addView(saveButton);
     this->setContentView(list);
 }
 
