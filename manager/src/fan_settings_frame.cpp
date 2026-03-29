@@ -4,7 +4,6 @@
 #include <cctype>
 #include <cstdio>
 #include <cstring>
-#include <functional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -30,6 +29,16 @@ namespace {
     static inline bool startsWith(const std::string& s, const char* prefix) {
         return s.rfind(prefix, 0) == 0;
     }
+
+    static inline int pwmToPercent(int pwm) {
+        pwm = std::clamp(pwm, 0, 255);
+        return (pwm * 100 + 127) / 255;
+    }
+
+    static inline int percentToPwm(int percent) {
+        percent = std::clamp(percent, 0, 100);
+        return (percent * 255 + 50) / 100;
+    }
 }
 
 // 10 фиксированных точек: 35..80 по 5 градусов
@@ -37,7 +46,7 @@ static std::vector<FanTableEntry> buildFixedTable(const std::vector<FanTableEntr
     std::vector<FanTableEntry> result;
     result.reserve(10);
 
-    int temp = 35000; // 35°C
+    int temp = 35000;
     int prevPwm = 0;
 
     for (int i = 0; i < 10; ++i, temp += 5000) {
@@ -259,16 +268,40 @@ void FanSettingsFrame::saveToIni() {
     brls::Application::notify("Fan settings saved. Reboot for changes to take effect.");
 }
 
-// --- Строка таблицы с одним PWM ---
+// --- Строка таблицы с одним PWM в процентах ---
 class FanTableRow : public brls::ListItem {
 public:
-    FanTableRow(const std::string& label, FanTableEntry* tableEntry)
-        : brls::ListItem(label), entry(tableEntry), editing(false) {
+    FanTableRow(const std::string& label, FanTableEntry* tableEntry, FanTableEntry* nextEntry = nullptr)
+        : brls::ListItem(label), entry(tableEntry), next(entry), editing(false) {
         updateValue();
     }
 
     void onFocusGained() override {
         brls::ListItem::onFocusGained();
+
+        registerAction("+", brls::Key::DUP, [this]() {
+            if (!editing) return false;
+            changeValue(1);
+            return true;
+        });
+
+        registerAction("-", brls::Key::DDOWN, [this]() {
+            if (!editing) return false;
+            changeValue(-1);
+            return true;
+        });
+
+        registerAction("+10", brls::Key::R, [this]() {
+            if (!editing) return false;
+            changeValue(10);
+            return true;
+        });
+
+        registerAction("-10", brls::Key::L, [this]() {
+            if (!editing) return false;
+            changeValue(-10);
+            return true;
+        });
 
         registerAction("Edit", brls::Key::A, [this]() {
             editing = true;
@@ -284,51 +317,35 @@ public:
             }
             return false;
         });
-
-        registerAction("Increase", brls::Key::DUP, [this]() {
-            if (!editing) return false;
-            changeValue(1);
-            return true;
-        });
-
-        registerAction("Decrease", brls::Key::DDOWN, [this]() {
-            if (!editing) return false;
-            changeValue(-1);
-            return true;
-        });
-
-        registerAction("Increase10", brls::Key::R, [this]() {
-            if (!editing) return false;
-            changeValue(10);
-            return true;
-        });
-
-        registerAction("Decrease10", brls::Key::L, [this]() {
-            if (!editing) return false;
-            changeValue(-10);
-            return true;
-        });
     }
 
 private:
     FanTableEntry* entry;
+    FanTableEntry* next;
     bool editing;
 
     void updateValue() {
-        std::string display = std::to_string(entry->maxPwm);
+        int percent = pwmToPercent(entry->maxPwm);
+        std::string display = std::to_string(percent) + "%";
         if (editing) display = "* " + display;
         setValue(display);
     }
 
-    void setValueClamped(int v) {
-        v = std::clamp(v, 0, 255);
-        entry->minPwm = v;
-        entry->maxPwm = v;
+    void setPercentValue(int percent) {
+        percent = std::clamp(percent, 0, 100);
+        int pwm = percentToPwm(percent);
+
+        entry->maxPwm = pwm;
+        if (next) {
+            next->minPwm = pwm;
+        }
+
         updateValue();
     }
 
     void changeValue(int delta) {
-        setValueClamped(entry->maxPwm + delta);
+        int currentPercent = pwmToPercent(entry->maxPwm);
+        setPercentValue(currentPercent + delta);
     }
 };
 
@@ -337,17 +354,19 @@ void FanSettingsFrame::buildUI() {
     list = new brls::List();
 
     list->addView(new brls::Header("Handheld Mode"));
-    for (auto& entry : handheldTable) {
+    for (size_t i = 0; i < handheldTable.size(); ++i) {
         char label[64];
-        snprintf(label, sizeof(label), "%d°C", entry.minTemp / 1000);
-        list->addView(new FanTableRow(label, &entry));
+        snprintf(label, sizeof(label), "%d°C", handheldTable[i].minTemp / 1000);
+        FanTableEntry* next = (i + 1 < handheldTable.size()) ? &handheldTable[i + 1] : nullptr;
+        list->addView(new FanTableRow(label, &handheldTable[i], next));
     }
 
     list->addView(new brls::Header("Docked Mode"));
-    for (auto& entry : dockedTable) {
+    for (size_t i = 0; i < dockedTable.size(); ++i) {
         char label[64];
-        snprintf(label, sizeof(label), "%d°C", entry.minTemp / 1000);
-        list->addView(new FanTableRow(label, &entry));
+        snprintf(label, sizeof(label), "%d°C", dockedTable[i].minTemp / 1000);
+        FanTableEntry* next = (i + 1 < dockedTable.size()) ? &dockedTable[i + 1] : nullptr;
+        list->addView(new FanTableRow(label, &dockedTable[i], next));
     }
 
     saveButton = new brls::Button(brls::ButtonStyle::BORDERLESS);
