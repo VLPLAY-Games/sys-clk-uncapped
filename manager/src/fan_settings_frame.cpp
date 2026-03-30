@@ -529,8 +529,21 @@ private:
         percent = std::clamp(percent, 0, 100);
         int pwm = percentToPwm(percent);
 
-        int lowerBound = entry->minPwm;
-        int upperBound = next ? next->maxPwm : 255;
+        if (isEdgeRow()) {
+            entry->minPwm = pwm;
+            entry->maxPwm = pwm;
+            updateValue();
+            return;
+        }
+
+        // Нижняя граница = max предыдущей строки (если это не первая после <35)
+        int lowerBound = 0;
+        if (entry->minTemp != TEMP_FIRST) {
+            lowerBound = entry->minPwm; // уже синхронизировано с предыдущей строкой
+        }
+
+        // Верхняя граница = max следующей строки (если не последняя перед >80)
+        int upperBound = next ? std::clamp(next->maxPwm, 0, 255) : 255;
 
         if (lowerBound > upperBound) {
             upperBound = lowerBound;
@@ -538,21 +551,17 @@ private:
 
         pwm = std::clamp(pwm, lowerBound, upperBound);
 
-        if (isEdgeRow()) {
-            entry->minPwm = pwm;
-            entry->maxPwm = pwm;
-        } else {
-            entry->maxPwm = pwm;
-            if (next) {
-                next->minPwm = pwm;
-            }
+        entry->maxPwm = pwm;
+        if (next) {
+            next->minPwm = pwm;
         }
 
         updateValue();
     }
 
+
     void changeValue(int deltaPercent) {
-        int currentPercent = pwmToPercent(entry->maxPwm);
+        const int currentPercent = pwmToPercent(entry->maxPwm);
         setPercentValue(currentPercent + deltaPercent);
     }
 };
