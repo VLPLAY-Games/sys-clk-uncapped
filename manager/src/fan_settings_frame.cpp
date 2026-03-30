@@ -529,18 +529,22 @@ private:
         percent = std::clamp(percent, 0, 100);
         int pwm = percentToPwm(percent);
 
+        // --- EDGE ROWS (<35 и >80) ---
         if (isEdgeRow()) {
             entry->minPwm = pwm;
             entry->maxPwm = pwm;
+
+            if (isLowerEdgeRow(*entry) && next) {
+                next->minPwm = pwm;
+            }
+
             updateValue();
             return;
         }
 
-        // Нижняя граница = предыдущий max (уже хранится в entry->minPwm)
         int lowerBound = entry->minPwm;
 
-        // Верхняя граница = следующий max (если есть)
-        int upperBound = next ? std::clamp(next->maxPwm, 0, 255) : 255;
+        int upperBound = 255;
 
         if (lowerBound > upperBound) {
             upperBound = lowerBound;
