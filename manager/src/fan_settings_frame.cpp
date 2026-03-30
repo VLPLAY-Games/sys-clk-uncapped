@@ -536,10 +536,20 @@ private:
 
     void refreshChain() {
         updateValue();
-        if (nextRow) {
-            nextRow->updateValue();
-            nextRow->refreshChain();
+
+        if (!nextRow) {
+            return;
         }
+
+        nextRow->entry->minPwm = entry->maxPwm;
+
+        // Если максимальное следующей строки ниже нового минимума,
+        // поднимаем его тоже.
+        if (nextRow->entry->maxPwm < nextRow->entry->minPwm) {
+            nextRow->entry->maxPwm = nextRow->entry->minPwm;
+        }
+
+        nextRow->refreshChain();
     }
 
     void setPercentValue(int percent) {
@@ -552,9 +562,14 @@ private:
 
             if (isLowerEdgeRow(*entry) && nextRow) {
                 nextRow->entry->minPwm = pwm;
+                if (nextRow->entry->maxPwm < nextRow->entry->minPwm) {
+                    nextRow->entry->maxPwm = nextRow->entry->minPwm;
+                }
+                nextRow->refreshChain();
+            } else {
+                refreshChain();
             }
 
-            refreshChain();
             return;
         }
 
@@ -574,10 +589,15 @@ private:
         entry->maxPwm = pwm;
 
         if (nextRow) {
-            nextRow->entry->minPwm = pwm;
+            nextRow->entry->minPwm = entry->maxPwm;
+            if (nextRow->entry->maxPwm < nextRow->entry->minPwm) {
+                nextRow->entry->maxPwm = nextRow->entry->minPwm;
+            }
+
+            nextRow->refreshChain();
         }
 
-        refreshChain();
+        updateValue();
     }
 
     void changeValue(int deltaPercent) {
