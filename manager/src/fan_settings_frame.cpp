@@ -451,9 +451,18 @@ void FanSettingsFrame::saveToIni() {
 // --- Строка таблицы ---
 class FanTableRow : public brls::ListItem {
 public:
-    FanTableRow(const std::string& label, FanTableEntry* tableEntry, FanTableEntry* nextEntry = nullptr)
-        : brls::ListItem(label), entry(tableEntry), next(nextEntry), editing(false) {
+    FanTableRow(const std::string& label,
+                FanTableEntry* tableEntry,
+                FanTableRow* nextRowWidget = nullptr)
+        : brls::ListItem(label),
+          entry(tableEntry),
+          nextRow(nextRowWidget),
+          editing(false) {
         updateValue();
+    }
+
+    void setNextRow(FanTableRow* row) {
+        nextRow = row;
     }
 
     void onFocusGained() override {
@@ -501,7 +510,7 @@ public:
 
 private:
     FanTableEntry* entry;
-    FanTableEntry* next;
+    FanTableRow* nextRow;
     bool editing;
 
     bool isEdgeRow() const {
@@ -525,25 +534,31 @@ private:
         setValue(display);
     }
 
+    void refreshChain() {
+        updateValue();
+        if (nextRow) {
+            nextRow->updateValue();
+            nextRow->refreshChain();
+        }
+    }
+
     void setPercentValue(int percent) {
         percent = std::clamp(percent, 0, 100);
         int pwm = percentToPwm(percent);
 
-        // --- EDGE ROWS (<35 и >80) ---
         if (isEdgeRow()) {
             entry->minPwm = pwm;
             entry->maxPwm = pwm;
 
-            if (isLowerEdgeRow(*entry) && next) {
-                next->minPwm = pwm;
+            if (isLowerEdgeRow(*entry) && nextRow) {
+                nextRow->entry->minPwm = pwm;
             }
 
-            updateValue();
+            refreshChain();
             return;
         }
 
         int lowerBound = entry->minPwm;
-
         int upperBound = 255;
 
         if (lowerBound > upperBound) {
@@ -558,16 +573,15 @@ private:
 
         entry->maxPwm = pwm;
 
-        if (next) {
-            next->minPwm = pwm;
+        if (nextRow) {
+            nextRow->entry->minPwm = pwm;
         }
 
-        updateValue();
+        refreshChain();
     }
 
-
     void changeValue(int deltaPercent) {
-        const int currentPercent = pwmToPercent(entry->maxPwm);
+        int currentPercent = pwmToPercent(entry->maxPwm);
         setPercentValue(currentPercent + deltaPercent);
     }
 };
@@ -576,18 +590,33 @@ private:
 void FanSettingsFrame::buildUI() {
     list = new brls::List();
 
+    std::vector<FanTableRow*> handheldRows;
+    std::vector<FanTableRow*> dockedRows;
+
     list->addView(new brls::Header("Handheld Mode"));
+    handheldRows.reserve(handheldTable.size());
+
     for (size_t i = 0; i < handheldTable.size(); ++i) {
         std::string label = formatRowLabel(handheldTable[i]);
-        FanTableEntry* next = (i + 1 < handheldTable.size()) ? &handheldTable[i + 1] : nullptr;
-        list->addView(new FanTableRow(label, &handheldTable[i], next));
+        handheldRows.push_back(new FanTableRow(label, &handheldTable[i]));
+        list->addView(handheldRows.back());
+    }
+
+    for (size_t i = 0; i + 1 < handheldRows.size(); ++i) {
+        handheldRows[i]->setNextRow(handheldRows[i + 1]);
     }
 
     list->addView(new brls::Header("Docked Mode"));
+    dockedRows.reserve(dockedTable.size());
+
     for (size_t i = 0; i < dockedTable.size(); ++i) {
         std::string label = formatRowLabel(dockedTable[i]);
-        FanTableEntry* next = (i + 1 < dockedTable.size()) ? &dockedTable[i + 1] : nullptr;
-        list->addView(new FanTableRow(label, &dockedTable[i], next));
+        dockedRows.push_back(new FanTableRow(label, &dockedTable[i]));
+        list->addView(dockedRows.back());
+    }
+
+    for (size_t i = 0; i + 1 < dockedRows.size(); ++i) {
+        dockedRows[i]->setNextRow(dockedRows[i + 1]);
     }
 
     auto* saveItem = new brls::ListItem("Save changes");
@@ -595,6 +624,7 @@ void FanSettingsFrame::buildUI() {
         saveToIni();
         return true;
     });
+
     list->addView(new brls::Header("Actions"));
     list->addView(saveItem);
 
