@@ -536,13 +536,10 @@ private:
             return;
         }
 
-        // Нижняя граница = max предыдущей строки (если это не первая после <35)
-        int lowerBound = 0;
-        if (entry->minTemp != TEMP_FIRST) {
-            lowerBound = entry->minPwm; // уже синхронизировано с предыдущей строкой
-        }
+        // Нижняя граница = предыдущий max (уже хранится в entry->minPwm)
+        int lowerBound = entry->minPwm;
 
-        // Верхняя граница = max следующей строки (если не последняя перед >80)
+        // Верхняя граница = следующий max (если есть)
         int upperBound = next ? std::clamp(next->maxPwm, 0, 255) : 255;
 
         if (lowerBound > upperBound) {
@@ -551,7 +548,12 @@ private:
 
         pwm = std::clamp(pwm, lowerBound, upperBound);
 
+        if (pwm < entry->minPwm) {
+            entry->minPwm = pwm;
+        }
+
         entry->maxPwm = pwm;
+
         if (next) {
             next->minPwm = pwm;
         }
