@@ -559,6 +559,7 @@ private:
         if (isEdgeRow()) {
             entry->minPwm = pwm;
             entry->maxPwm = pwm;
+            updateValue();
 
             if (isLowerEdgeRow(*entry) && nextRow) {
                 nextRow->entry->minPwm = pwm;
