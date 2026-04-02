@@ -40,6 +40,7 @@ public:
     bool onCancel() override;
 
 private:
+    std::vector<FanTableEntry>* getActiveTable();
     std::vector<FanTableEntry> handheldTable;
     std::vector<FanTableEntry> dockedTable;
 

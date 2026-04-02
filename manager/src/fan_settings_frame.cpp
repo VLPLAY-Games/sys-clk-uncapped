@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <functional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -30,6 +31,13 @@ namespace {
         35000, 40000, 45000, 50000, 55000,
         60000, 65000, 70000, 75000, 80000
     };
+
+    enum class FanMode {
+        Handheld,
+        Docked
+    };
+
+    static FanMode gActiveMode = FanMode::Handheld;
 
     static inline void trimInPlace(std::string& s) {
         auto isSpace = [](unsigned char c) { return std::isspace(c) != 0; };
@@ -208,6 +216,10 @@ namespace {
         });
 
         return raw;
+    }
+
+    static const char* getModeTitle(FanMode mode) {
+        return mode == FanMode::Handheld ? "Handheld Mode" : "Docked Mode";
     }
 }
 
@@ -607,37 +619,79 @@ private:
     }
 };
 
+class ModeItem : public brls::ListItem {
+public:
+    ModeItem(const std::string& label,
+             bool selected,
+             std::function<void()> onSelect)
+        : brls::ListItem(label),
+          selected(selected),
+          onSelect(std::move(onSelect)) {
+        updateValue();
+    }
+
+    void onFocusGained() override {
+        brls::ListItem::onFocusGained();
+
+        registerAction("Select", brls::Key::A, [this]() {
+            if (onSelect) {
+                onSelect();
+                return true;
+            }
+            return false;
+        });
+    }
+
+private:
+    bool selected;
+    std::function<void()> onSelect;
+
+    void updateValue() {
+        setValue(selected ? "Selected" : "");
+    }
+};
+
 // --- Основное окно ---
 void FanSettingsFrame::buildUI() {
     list = new brls::List();
 
-    std::vector<FanTableRow*> handheldRows;
-    std::vector<FanTableRow*> dockedRows;
+    list->addView(new brls::Header("Mode"));
 
-    list->addView(new brls::Header("Handheld Mode"));
-    handheldRows.reserve(handheldTable.size());
+    auto makeModeItem = [this](FanMode mode) {
+        const bool selected = (gActiveMode == mode);
 
-    for (size_t i = 0; i < handheldTable.size(); ++i) {
-        std::string label = formatRowLabel(handheldTable[i]);
-        handheldRows.push_back(new FanTableRow(label, &handheldTable[i]));
-        list->addView(handheldRows.back());
+        return new ModeItem(
+            mode == FanMode::Handheld ? "Handheld" : "Docked",
+            selected,
+            [this, mode]() {
+                if (gActiveMode != mode) {
+                    gActiveMode = mode;
+                    brls::Application::pushView(new FanSettingsFrame());
+                }
+            }
+        );
+    };
+
+    list->addView(makeModeItem(FanMode::Handheld));
+    list->addView(makeModeItem(FanMode::Docked));
+
+    list->addView(new brls::Header(getModeTitle(gActiveMode)));
+
+    std::vector<FanTableEntry>* activeTable = (gActiveMode == FanMode::Handheld)
+        ? &handheldTable
+        : &dockedTable;
+
+    std::vector<FanTableRow*> activeRows;
+    activeRows.reserve(activeTable->size());
+
+    for (size_t i = 0; i < activeTable->size(); ++i) {
+        std::string label = formatRowLabel((*activeTable)[i]);
+        activeRows.push_back(new FanTableRow(label, &(*activeTable)[i]));
+        list->addView(activeRows.back());
     }
 
-    for (size_t i = 0; i + 1 < handheldRows.size(); ++i) {
-        handheldRows[i]->setNextRow(handheldRows[i + 1]);
-    }
-
-    list->addView(new brls::Header("Docked Mode"));
-    dockedRows.reserve(dockedTable.size());
-
-    for (size_t i = 0; i < dockedTable.size(); ++i) {
-        std::string label = formatRowLabel(dockedTable[i]);
-        dockedRows.push_back(new FanTableRow(label, &dockedTable[i]));
-        list->addView(dockedRows.back());
-    }
-
-    for (size_t i = 0; i + 1 < dockedRows.size(); ++i) {
-        dockedRows[i]->setNextRow(dockedRows[i + 1]);
+    for (size_t i = 0; i + 1 < activeRows.size(); ++i) {
+        activeRows[i]->setNextRow(activeRows[i + 1]);
     }
 
     auto* saveItem = new brls::ListItem("Save changes");
