@@ -31,7 +31,6 @@
 
 #define PROFILE_BADGE "\uE3E0"
 
-// В самом начале файла, после #include и #define PROFILE_BADGE, добавьте:
 #ifdef __SWITCH__
 #include <zlib.h>
 typedef struct {
