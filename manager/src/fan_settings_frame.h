@@ -31,6 +31,9 @@ struct FanTableEntry {
     int maxPwm;
 };
 
+class FanTableRow;
+class ModeItem;
+
 class FanSettingsFrame : public brls::ThumbnailFrame
 {
 public:
@@ -40,16 +43,19 @@ public:
     bool onCancel() override;
 
 private:
-    std::vector<FanTableEntry>* getActiveTable();
     std::vector<FanTableEntry> handheldTable;
     std::vector<FanTableEntry> dockedTable;
 
     brls::List* list = nullptr;
-    brls::Button* saveButton = nullptr;
+
+    ModeItem* handheldModeItem = nullptr;
+    ModeItem* dockedModeItem = nullptr;
+    std::vector<FanTableRow*> tableRows;
 
     void loadFromIni();
     void saveToIni();
     void buildUI();
+    void refreshUI();
 
     static std::vector<FanTableEntry> parseTableString(const std::string& str);
     static std::string serializeTable(const std::vector<FanTableEntry>& table);

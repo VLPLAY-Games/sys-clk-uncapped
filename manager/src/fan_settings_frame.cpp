@@ -464,10 +464,12 @@ void FanSettingsFrame::saveToIni() {
 class FanTableRow : public brls::ListItem {
 public:
     FanTableRow(const std::string& label,
-                FanTableEntry* tableEntry,
+                FanTableEntry* handheldEntry,
+                FanTableEntry* dockedEntry,
                 FanTableRow* nextRowWidget = nullptr)
         : brls::ListItem(label),
-          entry(tableEntry),
+          handheldEntry(handheldEntry),
+          dockedEntry(dockedEntry),
           nextRow(nextRowWidget),
           editing(false) {
         updateValue();
@@ -475,6 +477,11 @@ public:
 
     void setNextRow(FanTableRow* row) {
         nextRow = row;
+    }
+
+    void refreshFromMode() {
+        editing = false;
+        updateValue();
     }
 
     void onFocusGained() override {
@@ -521,15 +528,21 @@ public:
     }
 
 private:
-    FanTableEntry* entry;
+    FanTableEntry* handheldEntry;
+    FanTableEntry* dockedEntry;
     FanTableRow* nextRow;
     bool editing;
 
+    FanTableEntry* currentEntry() const {
+        return gActiveMode == FanMode::Handheld ? handheldEntry : dockedEntry;
+    }
+
     bool isEdgeRow() const {
-        return isLowerEdgeRow(*entry) || isUpperEdgeRow(*entry);
+        return isLowerEdgeRow(*currentEntry()) || isUpperEdgeRow(*currentEntry());
     }
 
     void updateValue() {
+        FanTableEntry* entry = currentEntry();
         std::string display;
 
         if (isEdgeRow()) {
@@ -553,12 +566,15 @@ private:
             return;
         }
 
-        nextRow->entry->minPwm = entry->maxPwm;
+        FanTableEntry* entry = currentEntry();
+        FanTableEntry* nextEntry = nextRow->currentEntry();
+
+        nextEntry->minPwm = entry->maxPwm;
 
         // Если максимальное следующей строки ниже нового минимума,
         // поднимаем его тоже.
-        if (nextRow->entry->maxPwm < nextRow->entry->minPwm) {
-            nextRow->entry->maxPwm = nextRow->entry->minPwm;
+        if (nextEntry->maxPwm < nextEntry->minPwm) {
+            nextEntry->maxPwm = nextEntry->minPwm;
         }
 
         nextRow->refreshChain();
@@ -568,15 +584,18 @@ private:
         percent = std::clamp(percent, 0, 100);
         int pwm = percentToPwm(percent);
 
+        FanTableEntry* entry = currentEntry();
+
         if (isEdgeRow()) {
             entry->minPwm = pwm;
             entry->maxPwm = pwm;
             updateValue();
 
             if (isLowerEdgeRow(*entry) && nextRow) {
-                nextRow->entry->minPwm = pwm;
-                if (nextRow->entry->maxPwm < nextRow->entry->minPwm) {
-                    nextRow->entry->maxPwm = nextRow->entry->minPwm;
+                FanTableEntry* nextEntry = nextRow->currentEntry();
+                nextEntry->minPwm = pwm;
+                if (nextEntry->maxPwm < nextEntry->minPwm) {
+                    nextEntry->maxPwm = nextEntry->minPwm;
                 }
                 nextRow->refreshChain();
             } else {
@@ -602,9 +621,10 @@ private:
         entry->maxPwm = pwm;
 
         if (nextRow) {
-            nextRow->entry->minPwm = entry->maxPwm;
-            if (nextRow->entry->maxPwm < nextRow->entry->minPwm) {
-                nextRow->entry->maxPwm = nextRow->entry->minPwm;
+            FanTableEntry* nextEntry = nextRow->currentEntry();
+            nextEntry->minPwm = entry->maxPwm;
+            if (nextEntry->maxPwm < nextEntry->minPwm) {
+                nextEntry->maxPwm = nextEntry->minPwm;
             }
 
             nextRow->refreshChain();
@@ -614,6 +634,7 @@ private:
     }
 
     void changeValue(int deltaPercent) {
+        FanTableEntry* entry = currentEntry();
         int currentPercent = pwmToPercent(entry->maxPwm);
         setPercentValue(currentPercent + deltaPercent);
     }
@@ -627,6 +648,11 @@ public:
         : brls::ListItem(label),
           selected(selected),
           onSelect(std::move(onSelect)) {
+        updateValue();
+    }
+
+    void setSelected(bool value) {
+        selected = value;
         updateValue();
     }
 
@@ -657,41 +683,51 @@ void FanSettingsFrame::buildUI() {
 
     list->addView(new brls::Header("Mode"));
 
-    auto makeModeItem = [this](FanMode mode) {
-        const bool selected = (gActiveMode == mode);
-
-        return new ModeItem(
-            mode == FanMode::Handheld ? "Handheld" : "Docked",
-            selected,
-            [this, mode]() {
-                if (gActiveMode != mode) {
-                    gActiveMode = mode;
-                    brls::Application::pushView(new FanSettingsFrame());
-                }
+    handheldModeItem = new ModeItem(
+        "Handheld",
+        gActiveMode == FanMode::Handheld,
+        [this]() {
+            if (gActiveMode != FanMode::Handheld) {
+                gActiveMode = FanMode::Handheld;
+                refreshUI();
             }
+        }
+    );
+
+    dockedModeItem = new ModeItem(
+        "Docked",
+        gActiveMode == FanMode::Docked,
+        [this]() {
+            if (gActiveMode != FanMode::Docked) {
+                gActiveMode = FanMode::Docked;
+                refreshUI();
+            }
+        }
+    );
+
+    list->addView(handheldModeItem);
+    list->addView(dockedModeItem);
+
+    list->addView(new brls::Header("Fan Table"));
+
+    tableRows.clear();
+    tableRows.reserve(handheldTable.size());
+
+    for (size_t i = 0; i < handheldTable.size(); ++i) {
+        std::string label = formatRowLabel(handheldTable[i]);
+
+        auto* row = new FanTableRow(
+            label,
+            &handheldTable[i],
+            &dockedTable[i]
         );
-    };
 
-    list->addView(makeModeItem(FanMode::Handheld));
-    list->addView(makeModeItem(FanMode::Docked));
-
-    list->addView(new brls::Header(getModeTitle(gActiveMode)));
-
-    std::vector<FanTableEntry>* activeTable = (gActiveMode == FanMode::Handheld)
-        ? &handheldTable
-        : &dockedTable;
-
-    std::vector<FanTableRow*> activeRows;
-    activeRows.reserve(activeTable->size());
-
-    for (size_t i = 0; i < activeTable->size(); ++i) {
-        std::string label = formatRowLabel((*activeTable)[i]);
-        activeRows.push_back(new FanTableRow(label, &(*activeTable)[i]));
-        list->addView(activeRows.back());
+        tableRows.push_back(row);
+        list->addView(row);
     }
 
-    for (size_t i = 0; i + 1 < activeRows.size(); ++i) {
-        activeRows[i]->setNextRow(activeRows[i + 1]);
+    for (size_t i = 0; i + 1 < tableRows.size(); ++i) {
+        tableRows[i]->setNextRow(tableRows[i + 1]);
     }
 
     auto* saveItem = new brls::ListItem("Save changes");
@@ -704,6 +740,22 @@ void FanSettingsFrame::buildUI() {
     list->addView(saveItem);
 
     this->setContentView(list);
+}
+
+void FanSettingsFrame::refreshUI() {
+    if (handheldModeItem) {
+        handheldModeItem->setSelected(gActiveMode == FanMode::Handheld);
+    }
+
+    if (dockedModeItem) {
+        dockedModeItem->setSelected(gActiveMode == FanMode::Docked);
+    }
+
+    for (auto* row : tableRows) {
+        if (row) {
+            row->refreshFromMode();
+        }
+    }
 }
 
 FanSettingsFrame::FanSettingsFrame() {
