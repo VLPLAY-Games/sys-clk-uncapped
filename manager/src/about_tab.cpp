@@ -16,6 +16,8 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+    
+    Modifications by VL_PLAY Games
 */
 
 #include "about_tab.h"
@@ -44,7 +46,8 @@ AboutTab::AboutTab()
         brls::LabelStyle::DESCRIPTION,
         "System module licensed under the Beerware license\n" \
         "Frontend app licensed under GPL-3.0\n" \
-        "\u00A9 2019 - 2020 natinusala, p-sam, m4xw",
+        "\u00A9 2019 - 2020 natinusala, p-sam, m4xw\n" \
+        "Modifications by VL_PLAY Games",
         true
     );
     copyright->setHorizontalAlign(NVG_ALIGN_CENTER);
